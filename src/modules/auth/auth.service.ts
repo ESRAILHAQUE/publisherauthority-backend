@@ -14,7 +14,7 @@ class AuthService {
    */
   private generateToken(userId: string): string {
     return jwt.sign({ id: userId }, config.JWT_SECRET, {
-      expiresIn: config.JWT_EXPIRES_IN,
+      expiresIn: config.JWT_EXPIRES_IN as any,
     });
   }
 

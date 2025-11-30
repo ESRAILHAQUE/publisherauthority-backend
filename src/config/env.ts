@@ -4,10 +4,26 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 /**
+ * Environment Configuration Interface
+ */
+interface Config {
+  NODE_ENV: string;
+  PORT: number;
+  MONGODB_URI: string;
+  JWT_SECRET: string;
+  JWT_REFRESH_SECRET: string;
+  JWT_EXPIRES_IN: string;
+  JWT_REFRESH_EXPIRES_IN: string;
+  CORS_ORIGIN: string;
+  RATE_LIMIT_WINDOW_MS: number;
+  RATE_LIMIT_MAX_REQUESTS: number;
+}
+
+/**
  * Environment Configuration
  * Centralized configuration for all environment variables
  */
-export const config = {
+export const config: Config = {
   // Server
   NODE_ENV: process.env.NODE_ENV || 'development',
   PORT: parseInt(process.env.PORT || '5000', 10),
@@ -17,7 +33,9 @@ export const config = {
   
   // JWT
   JWT_SECRET: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
+  JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key-change-in-production',
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
+  JWT_REFRESH_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
   
   // CORS
   CORS_ORIGIN: process.env.CORS_ORIGIN || '*',
