@@ -1,18 +1,46 @@
-import dotenv from 'dotenv';
 import app from './app';
-import connectDB from './config/db';
+import config from './config/env';
+import connectDB from './config/database';
+import logger from './utils/logger';
 
-// Load environment variables
-dotenv.config();
+/**
+ * Server Startup
+ * Initializes database connection and starts the HTTP server
+ */
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err: Error) => {
+  logger.error('UNCAUGHT EXCEPTION! 💥 Shutting down...');
+  logger.error(err.name, err.message);
+  process.exit(1);
+});
 
 // Connect to MongoDB
 connectDB();
 
 // Start server
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV}`);
+const PORT = config.PORT;
+const server = app.listen(PORT, () => {
+  logger.info('='.repeat(50));
+  logger.info(`🚀 Server is running on port ${PORT}`);
+  logger.info(`📝 Environment: ${config.NODE_ENV}`);
+  logger.info(`🌐 API URL: http://localhost:${PORT}/api/v1`);
+  logger.info('='.repeat(50));
 });
 
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err: Error) => {
+  logger.error('UNHANDLED REJECTION! 💥 Shutting down...');
+  logger.error(err.name, err.message);
+  server.close(() => {
+    process.exit(1);
+  });
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  logger.info('👋 SIGTERM RECEIVED. Shutting down gracefully');
+  server.close(() => {
+    logger.info('💥 Process terminated!');
+  });
+});
