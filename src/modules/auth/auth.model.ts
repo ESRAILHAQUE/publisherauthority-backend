@@ -6,12 +6,22 @@ import bcrypt from 'bcryptjs';
  * Defines the structure of User document
  */
 export interface IUser extends Document {
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   password: string;
-  role: 'user' | 'admin';
+  country: string;
+  profileImage?: string;
+  accountLevel: 'silver' | 'gold' | 'premium';
+  accountStatus: 'active' | 'suspended' | 'deleted';
+  role: 'publisher' | 'admin';
   isVerified: boolean;
   isActive: boolean;
+  paypalEmail?: string;
+  applicationStatus: 'pending' | 'approved' | 'rejected';
+  totalEarnings: number;
+  completedOrders: number;
+  activeWebsites: number;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -23,12 +33,15 @@ export interface IUser extends Document {
  */
 const userSchema = new Schema<IUser>(
   {
-    name: {
+    firstName: {
       type: String,
-      required: [true, 'Name is required'],
+      required: [true, 'First name is required'],
       trim: true,
-      minlength: [2, 'Name must be at least 2 characters long'],
-      maxlength: [50, 'Name cannot exceed 50 characters'],
+    },
+    lastName: {
+      type: String,
+      required: [true, 'Last name is required'],
+      trim: true,
     },
     email: {
       type: String,
@@ -36,24 +49,49 @@ const userSchema = new Schema<IUser>(
       unique: true,
       lowercase: true,
       trim: true,
+      immutable: true,
       match: [
         /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
         'Please provide a valid email address',
       ],
+      index: true,
     },
     password: {
       type: String,
       required: [true, 'Password is required'],
       minlength: [6, 'Password must be at least 6 characters long'],
-      select: false, // Don't return password by default in queries
+      select: false,
+    },
+    country: {
+      type: String,
+      required: [true, 'Country is required'],
+    },
+    profileImage: {
+      type: String,
+    },
+    accountLevel: {
+      type: String,
+      enum: {
+        values: ['silver', 'gold', 'premium'],
+        message: 'Invalid account level',
+      },
+      default: 'silver',
+    },
+    accountStatus: {
+      type: String,
+      enum: {
+        values: ['active', 'suspended', 'deleted'],
+        message: 'Invalid account status',
+      },
+      default: 'active',
     },
     role: {
       type: String,
       enum: {
-        values: ['user', 'admin'],
-        message: 'Role must be either user or admin',
+        values: ['publisher', 'admin'],
+        message: 'Role must be either publisher or admin',
       },
-      default: 'user',
+      default: 'publisher',
     },
     isVerified: {
       type: Boolean,
@@ -62,6 +100,31 @@ const userSchema = new Schema<IUser>(
     isActive: {
       type: Boolean,
       default: true,
+    },
+    paypalEmail: {
+      type: String,
+      lowercase: true,
+      trim: true,
+    },
+    applicationStatus: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'pending',
+    },
+    totalEarnings: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    completedOrders: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    activeWebsites: {
+      type: Number,
+      default: 0,
+      min: 0,
     },
   },
   {

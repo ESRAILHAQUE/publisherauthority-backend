@@ -14,9 +14,9 @@ class AuthController {
    * @access  Public
    */
   register = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
-    const { name, email, password } = req.body;
+    const { firstName, lastName, email, password, country, role } = req.body;
 
-    const { user, token } = await authService.register({ name, email, password });
+    const { user, token } = await authService.register({ firstName, lastName, email, password, country, role });
 
     sendSuccess(res, 201, 'User registered successfully', {
       user,

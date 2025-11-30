@@ -19,12 +19,15 @@ class AuthService {
   }
 
   /**
-   * Register New User
+   * Register New User (Admin only - or use application flow)
    */
   async register(userData: {
-    name: string;
+    firstName: string;
+    lastName: string;
     email: string;
     password: string;
+    country: string;
+    role?: string;
   }): Promise<{ user: IUser; token: string }> {
     // Check if user already exists
     const existingUser = await User.findOne({ email: userData.email });
@@ -33,7 +36,13 @@ class AuthService {
     }
 
     // Create new user
-    const user = await User.create(userData);
+    const user = await User.create({
+      ...userData,
+      role: userData.role || 'publisher',
+      accountLevel: 'silver',
+      accountStatus: 'active',
+      applicationStatus: 'approved',
+    });
     logger.info(`New user registered: ${user.email}`);
 
     // Generate token

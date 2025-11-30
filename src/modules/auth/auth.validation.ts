@@ -6,12 +6,15 @@ import { body } from 'express-validator';
  */
 
 export const registerValidation = [
-  body('name')
+  body('firstName')
     .trim()
     .notEmpty()
-    .withMessage('Name is required')
-    .isLength({ min: 2, max: 50 })
-    .withMessage('Name must be between 2 and 50 characters'),
+    .withMessage('First name is required'),
+  
+  body('lastName')
+    .trim()
+    .notEmpty()
+    .withMessage('Last name is required'),
   
   body('email')
     .trim()
@@ -26,6 +29,11 @@ export const registerValidation = [
     .withMessage('Password is required')
     .isLength({ min: 6 })
     .withMessage('Password must be at least 6 characters long'),
+  
+  body('country')
+    .trim()
+    .notEmpty()
+    .withMessage('Country is required'),
 ];
 
 export const loginValidation = [
