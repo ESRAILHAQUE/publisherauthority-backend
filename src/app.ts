@@ -77,10 +77,11 @@ if (config.NODE_ENV === 'development') {
 app.get('/', (_req: Request, res: Response) => {
   res.json({
     success: true,
-    message: 'Publisher Authority API is running',
-    version: '1.0.0',
+    message: 'Publisher Authority API is running - Auto Deploy Test Successful! 🚀',
+    version: '1.0.1',
     environment: config.NODE_ENV,
     timestamp: new Date().toISOString(),
+    deployment: 'CI/CD Pipeline Active',
   });
 });
 
