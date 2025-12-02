@@ -5,6 +5,7 @@ import morgan from "morgan";
 import compression from "compression";
 import mongoSanitize from "express-mongo-sanitize";
 import rateLimit from "express-rate-limit";
+import path from "path";
 import config from "./config/env";
 import logger from "./utils/logger";
 import errorHandler from "./middleware/errorHandler";
@@ -125,6 +126,9 @@ app.get("/api/v1/health", (_req: Request, res: Response) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+// Serve uploaded files statically
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // Mount API routes
 // Support both /api/v1 and /v1 (in case reverse proxy strips /api)

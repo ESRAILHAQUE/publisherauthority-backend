@@ -22,6 +22,7 @@ interface Config {
   EMAIL_USER: string;
   EMAIL_PASSWORD: string;
   EMAIL_FROM: string;
+  FRONTEND_URL: string;
 }
 
 /**
@@ -68,6 +69,9 @@ export const config: Config = {
   EMAIL_FROM:
     process.env.EMAIL_FROM ||
     "Publisherauthority <Info@publisherauthority.com>",
+
+  // Frontend URL for email links
+  FRONTEND_URL: process.env.FRONTEND_URL || "https://publisherauthority.com",
 };
 
 export default config;

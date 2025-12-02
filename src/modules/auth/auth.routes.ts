@@ -1,7 +1,7 @@
-import { Router } from 'express';
-import authController from './auth.controller';
-import { registerValidation, loginValidation } from './auth.validation';
-import validateRequest from '../../middleware/validateRequest';
+import { Router } from "express";
+import authController from "./auth.controller";
+import { registerValidation, loginValidation } from "./auth.validation";
+import validateRequest from "../../middleware/validateRequest";
 
 /**
  * Auth Routes
@@ -10,11 +10,16 @@ import validateRequest from '../../middleware/validateRequest';
 const router = Router();
 
 // Public routes
-router.post('/register', registerValidation, validateRequest, authController.register);
-router.post('/login', loginValidation, validateRequest, authController.login);
+router.post(
+  "/register",
+  registerValidation,
+  validateRequest,
+  authController.register
+);
+router.post("/login", loginValidation, validateRequest, authController.login);
 
 // Protected routes (will add auth middleware later)
-router.get('/me', authController.getMe);
+router.get("/me", authController.getMe);
+router.post("/logout", authController.logout);
 
 export default router;
-

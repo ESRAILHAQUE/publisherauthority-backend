@@ -1,6 +1,6 @@
-import nodemailer from 'nodemailer';
-import config from '../config/env';
-import logger from './logger';
+import nodemailer from "nodemailer";
+import config from "../config/env";
+import logger from "./logger";
 
 /**
  * Email Service Utility
@@ -36,7 +36,7 @@ export async function sendEmail(options: EmailOptions): Promise<void> {
   try {
     // Validate email configuration
     if (!config.EMAIL_HOST || !config.EMAIL_USER || !config.EMAIL_PASSWORD) {
-      logger.warn('Email configuration is incomplete. Skipping email send.');
+      logger.warn("Email configuration is incomplete. Skipping email send.");
       return;
     }
 
@@ -47,7 +47,7 @@ export async function sendEmail(options: EmailOptions): Promise<void> {
       to: options.to,
       subject: options.subject,
       html: options.html,
-      text: options.text || options.html.replace(/<[^>]*>/g, ''), // Strip HTML for text version
+      text: options.text || options.html.replace(/<[^>]*>/g, ""), // Strip HTML for text version
     };
 
     const info = await transporter.sendMail(mailOptions);
@@ -61,7 +61,10 @@ export async function sendEmail(options: EmailOptions): Promise<void> {
 /**
  * Send Welcome Email
  */
-export async function sendWelcomeEmail(userEmail: string, userName: string): Promise<void> {
+export async function sendWelcomeEmail(
+  userEmail: string,
+  userName: string
+): Promise<void> {
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2 style="color: #3F207F;">Welcome to Publisher Authority!</h2>
@@ -75,7 +78,7 @@ export async function sendWelcomeEmail(userEmail: string, userName: string): Pro
 
   await sendEmail({
     to: userEmail,
-    subject: 'Welcome to Publisher Authority',
+    subject: "Welcome to Publisher Authority",
     html,
   });
 }
@@ -93,14 +96,14 @@ export async function sendApplicationApprovalEmail(
       <p>Hi ${userName},</p>
       <p>Great news! Your publisher application has been approved.</p>
       <p>You can now log in to your account and start adding your websites.</p>
-      <p><a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/login" style="background-color: #3F207F; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Login to Your Account</a></p>
+      <p><a href="${config.FRONTEND_URL}/auth/login" style="background-color: #3F207F; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Login to Your Account</a></p>
       <p>Best regards,<br>The Publisher Authority Team</p>
     </div>
   `;
 
   await sendEmail({
     to: userEmail,
-    subject: 'Your Publisher Application Has Been Approved',
+    subject: "Your Publisher Application Has Been Approved",
     html,
   });
 }
@@ -118,7 +121,7 @@ export async function sendApplicationRejectionEmail(
       <h2 style="color: #ef4444;">Application Status Update</h2>
       <p>Hi ${userName},</p>
       <p>We regret to inform you that your publisher application has not been approved at this time.</p>
-      ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ''}
+      ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ""}
       <p>If you have any questions, please contact our support team.</p>
       <p>Best regards,<br>The Publisher Authority Team</p>
     </div>
@@ -126,7 +129,7 @@ export async function sendApplicationRejectionEmail(
 
   await sendEmail({
     to: userEmail,
-    subject: 'Publisher Application Status Update',
+    subject: "Publisher Application Status Update",
     html,
   });
 }
@@ -147,7 +150,7 @@ export async function sendOrderAssignmentEmail(
       <p>A new order has been assigned to you:</p>
       <p><strong>Order:</strong> ${orderTitle}</p>
       <p><strong>Order ID:</strong> ${orderId}</p>
-      <p><a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard/orders/${orderId}" style="background-color: #3F207F; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Order</a></p>
+      <p><a href="${config.FRONTEND_URL}/dashboard/orders/${orderId}" style="background-color: #3F207F; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Order</a></p>
       <p>Please check your dashboard for more details.</p>
       <p>Best regards,<br>The Publisher Authority Team</p>
     </div>
@@ -187,4 +190,3 @@ export async function sendPaymentNotificationEmail(
     html,
   });
 }
-

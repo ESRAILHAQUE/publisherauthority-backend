@@ -1,5 +1,5 @@
-import { Router } from 'express';
-import applicationsController from './applications.controller';
+import { Router } from "express";
+import applicationsController from "./applications.controller";
 
 /**
  * Applications Routes
@@ -7,10 +7,8 @@ import applicationsController from './applications.controller';
 const router = Router();
 
 // Public routes
-router.post('/', applicationsController.submitApplication);
-router.get('/', applicationsController.getApplications); // Add GET route for checking applications
+// Note: File upload is handled in the controller using multer
+router.post("/", applicationsController.submitApplication);
+router.get("/", applicationsController.getApplications); // Add GET route for checking applications
 
 export default router;
-
-
-

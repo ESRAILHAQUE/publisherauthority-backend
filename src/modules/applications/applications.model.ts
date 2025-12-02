@@ -1,4 +1,4 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import mongoose, { Document, Schema } from "mongoose";
 
 /**
  * Application Interface
@@ -19,6 +19,14 @@ export interface IApplication extends Document {
     phone?: string;
   };
   csvData?: any[];
+  files?: Array<{
+    filename: string;
+    originalName: string;
+    path: string;
+    size: number;
+    mimetype: string;
+    uploadedAt: Date;
+  }>;
   quizAnswers: {
     question1?: string;
     question2?: string;
@@ -30,7 +38,7 @@ export interface IApplication extends Document {
     question8?: string;
     question9?: string;
   };
-  status: 'pending' | 'approved' | 'rejected';
+  status: "pending" | "approved" | "rejected";
   reviewedAt?: Date;
   reviewedBy?: mongoose.Types.ObjectId;
   rejectionReason?: string;
@@ -46,21 +54,21 @@ const applicationSchema = new Schema<IApplication>(
   {
     userId: {
       type: Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
     },
     firstName: {
       type: String,
-      required: [true, 'First name is required'],
+      required: [true, "First name is required"],
       trim: true,
     },
     lastName: {
       type: String,
-      required: [true, 'Last name is required'],
+      required: [true, "Last name is required"],
       trim: true,
     },
     email: {
       type: String,
-      required: [true, 'Email is required'],
+      required: [true, "Email is required"],
       unique: true,
       lowercase: true,
       trim: true,
@@ -68,12 +76,12 @@ const applicationSchema = new Schema<IApplication>(
     },
     password: {
       type: String,
-      required: [true, 'Password is required'],
+      required: [true, "Password is required"],
       select: false,
     },
     country: {
       type: String,
-      required: [true, 'Country is required'],
+      required: [true, "Country is required"],
     },
     hearAboutUs: {
       type: String,
@@ -84,12 +92,12 @@ const applicationSchema = new Schema<IApplication>(
     guestPostUrls: {
       type: [String],
       validate: {
-        validator: function(v: string[]) {
+        validator: function (v: string[]) {
           // Filter out empty strings and null values
-          const validUrls = (v || []).filter(url => url && url.trim() !== '');
+          const validUrls = (v || []).filter((url) => url && url.trim() !== "");
           return validUrls.length >= 3;
         },
-        message: 'At least 3 guest post URLs are required',
+        message: "At least 3 guest post URLs are required",
       },
     },
     referralInfo: {
@@ -100,6 +108,19 @@ const applicationSchema = new Schema<IApplication>(
     csvData: {
       type: Schema.Types.Mixed,
     },
+    files: [
+      {
+        filename: String,
+        originalName: String,
+        path: String,
+        size: Number,
+        mimetype: String,
+        uploadedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
     quizAnswers: {
       question1: String,
       question2: String,
@@ -114,10 +135,10 @@ const applicationSchema = new Schema<IApplication>(
     status: {
       type: String,
       enum: {
-        values: ['pending', 'approved', 'rejected'],
-        message: 'Invalid application status',
+        values: ["pending", "approved", "rejected"],
+        message: "Invalid application status",
       },
-      default: 'pending',
+      default: "pending",
       index: true,
     },
     reviewedAt: {
@@ -125,7 +146,7 @@ const applicationSchema = new Schema<IApplication>(
     },
     reviewedBy: {
       type: Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
     },
     rejectionReason: {
       type: String,
@@ -140,8 +161,8 @@ const applicationSchema = new Schema<IApplication>(
   }
 );
 
-const Application = mongoose.model<IApplication>('Application', applicationSchema);
+const Application = mongoose.model<IApplication>(
+  "Application",
+  applicationSchema
+);
 export default Application;
-
-
-
