@@ -6,8 +6,9 @@ import applicationsController from './applications.controller';
  */
 const router = Router();
 
-// Public route
+// Public routes
 router.post('/', applicationsController.submitApplication);
+router.get('/', applicationsController.getApplications); // Add GET route for checking applications
 
 export default router;
 

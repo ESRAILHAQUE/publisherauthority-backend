@@ -44,6 +44,14 @@ class ApplicationsService {
   }
 
   /**
+   * Get Application by Email
+   */
+  async getApplicationByEmail(email: string): Promise<IApplication | null> {
+    const application = await Application.findOne({ email: email.toLowerCase().trim() });
+    return application;
+  }
+
+  /**
    * Get All Applications (Admin)
    */
   async getAllApplications(
