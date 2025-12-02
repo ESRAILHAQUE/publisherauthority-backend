@@ -17,6 +17,11 @@ interface Config {
   CORS_ORIGIN: string;
   RATE_LIMIT_WINDOW_MS: number;
   RATE_LIMIT_MAX_REQUESTS: number;
+  EMAIL_HOST: string;
+  EMAIL_PORT: number;
+  EMAIL_USER: string;
+  EMAIL_PASSWORD: string;
+  EMAIL_FROM: string;
 }
 
 /**
@@ -54,6 +59,15 @@ export const config: Config = {
     process.env.RATE_LIMIT_MAX_REQUESTS || "100",
     10
   ),
+
+  // Email Configuration
+  EMAIL_HOST: process.env.EMAIL_HOST || "smtp.hostinger.com",
+  EMAIL_PORT: parseInt(process.env.EMAIL_PORT || "587", 10),
+  EMAIL_USER: process.env.EMAIL_USER || "",
+  EMAIL_PASSWORD: process.env.EMAIL_PASSWORD || "",
+  EMAIL_FROM:
+    process.env.EMAIL_FROM ||
+    "Publisherauthority <Info@publisherauthority.com>",
 };
 
 export default config;

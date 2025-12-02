@@ -3,6 +3,7 @@ import Order from '../orders/orders.model';
 import User from '../auth/auth.model';
 import AppError from '../../utils/AppError';
 import logger from '../../utils/logger';
+import { sendPaymentNotificationEmail } from '../../utils/email';
 
 /**
  * Payments Service
@@ -197,6 +198,23 @@ class PaymentsService {
     await payment.save();
 
     logger.info(`Payment marked as paid: ${payment.invoiceNumber}`);
+    
+    // Send payment notification email
+    try {
+      const user = await User.findById(payment.userId).select('firstName lastName email');
+      if (user) {
+        await sendPaymentNotificationEmail(
+          user.email,
+          `${user.firstName} ${user.lastName}`,
+          payment.amount,
+          payment.invoiceNumber
+        );
+      }
+    } catch (emailError: any) {
+      logger.error('Failed to send payment notification email:', emailError);
+      // Don't fail payment if email fails
+    }
+    
     return payment;
   }
 

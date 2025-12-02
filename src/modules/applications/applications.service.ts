@@ -3,6 +3,7 @@ import User from '../auth/auth.model';
 import AppError from '../../utils/AppError';
 import logger from '../../utils/logger';
 import bcrypt from 'bcryptjs';
+import { sendApplicationApprovalEmail, sendApplicationRejectionEmail } from '../../utils/email';
 
 /**
  * Applications Service
@@ -118,6 +119,18 @@ class ApplicationsService {
     await application.save();
 
     logger.info(`Application approved: ${application.email}, User created: ${user._id}`);
+    
+    // Send approval email
+    try {
+      await sendApplicationApprovalEmail(
+        user.email,
+        `${user.firstName} ${user.lastName}`
+      );
+    } catch (emailError: any) {
+      logger.error('Failed to send approval email:', emailError);
+      // Don't fail the approval if email fails
+    }
+    
     return { application, user };
   }
 
@@ -146,6 +159,19 @@ class ApplicationsService {
     await application.save();
 
     logger.info(`Application rejected: ${application.email}`);
+    
+    // Send rejection email
+    try {
+      await sendApplicationRejectionEmail(
+        application.email,
+        `${application.firstName} ${application.lastName}`,
+        rejectionReason
+      );
+    } catch (emailError: any) {
+      logger.error('Failed to send rejection email:', emailError);
+      // Don't fail the rejection if email fails
+    }
+    
     return application;
   }
 

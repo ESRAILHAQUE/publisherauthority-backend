@@ -4,6 +4,7 @@ import Website from '../websites/websites.model';
 import AppError from '../../utils/AppError';
 import logger from '../../utils/logger';
 import { autoUpdateAccountLevel } from '../../utils/accountLevel';
+import { sendOrderAssignmentEmail } from '../../utils/email';
 
 /**
  * Orders Service
@@ -30,6 +31,20 @@ class OrdersService {
     });
 
     logger.info(`Order created: ${order.orderId} for publisher ${publisher.email}`);
+    
+    // Send order assignment email
+    try {
+      await sendOrderAssignmentEmail(
+        publisher.email,
+        `${publisher.firstName} ${publisher.lastName}`,
+        order.title,
+        order.orderId
+      );
+    } catch (emailError: any) {
+      logger.error('Failed to send order assignment email:', emailError);
+      // Don't fail order creation if email fails
+    }
+    
     return order;
   }
 
