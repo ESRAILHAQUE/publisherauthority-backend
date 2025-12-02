@@ -1,4 +1,4 @@
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 
 // Load environment variables
 dotenv.config();
@@ -25,27 +25,35 @@ interface Config {
  */
 export const config: Config = {
   // Server
-  NODE_ENV: process.env.NODE_ENV || 'development',
-  PORT: parseInt(process.env.PORT || '5003', 10),
-  
+  NODE_ENV: process.env.NODE_ENV || "development",
+  PORT: parseInt(process.env.PORT || "5003", 10),
+
   // Database
-  MONGODB_URI: process.env.MONGODB_URI || 'mongodb://localhost:27017/publisherauthority',
-  
+  MONGODB_URI:
+    process.env.MONGODB_URI || "mongodb://localhost:27017/publisherauthority",
+
   // JWT
-  JWT_SECRET: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
-  JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key-change-in-production',
-  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
-  JWT_REFRESH_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
-  
+  JWT_SECRET: process.env.JWT_SECRET || "your-secret-key-change-in-production",
+  JWT_REFRESH_SECRET:
+    process.env.JWT_REFRESH_SECRET ||
+    "your-refresh-secret-key-change-in-production",
+  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || "7d",
+  JWT_REFRESH_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN || "30d",
+
   // CORS - Allow multiple origins separated by comma
   // Development: '*' allows all origins
   // Production: 'http://localhost:3000,https://yourdomain.com'
-  CORS_ORIGIN: process.env.CORS_ORIGIN || '*',
-  
+  CORS_ORIGIN: process.env.CORS_ORIGIN || "*",
+
   // Rate Limiting
-  RATE_LIMIT_WINDOW_MS: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10), // 15 minutes
-  RATE_LIMIT_MAX_REQUESTS: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10),
+  RATE_LIMIT_WINDOW_MS: parseInt(
+    process.env.RATE_LIMIT_WINDOW_MS || "900000",
+    10
+  ), // 15 minutes
+  RATE_LIMIT_MAX_REQUESTS: parseInt(
+    process.env.RATE_LIMIT_MAX_REQUESTS || "100",
+    10
+  ),
 };
 
 export default config;
-

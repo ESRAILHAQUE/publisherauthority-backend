@@ -31,22 +31,30 @@ app.use(
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
       
-      // Allow all origins in development, or check against allowed list
-      if (config.NODE_ENV === 'development' || config.CORS_ORIGIN === '*') {
+      // If CORS_ORIGIN is '*', allow all origins
+      if (config.CORS_ORIGIN === '*') {
         return callback(null, true);
       }
       
-      // Check if origin is in allowed list
+      // Parse comma-separated origins
       const allowedOrigins = config.CORS_ORIGIN.split(',').map(o => o.trim());
+      
+      // Check if origin is in allowed list
       if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
+        // In development, log the origin for debugging
+        if (config.NODE_ENV === 'development') {
+          logger.warn(`CORS: Origin ${origin} not in allowed list: ${allowedOrigins.join(', ')}`);
+        }
         callback(new Error('Not allowed by CORS'));
       }
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    exposedHeaders: ['Content-Range', 'X-Content-Range'],
+    maxAge: 86400, // 24 hours
   })
 );
 
