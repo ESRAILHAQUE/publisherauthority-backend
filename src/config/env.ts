@@ -37,7 +37,9 @@ export const config: Config = {
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
   JWT_REFRESH_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
   
-  // CORS
+  // CORS - Allow multiple origins separated by comma
+  // Development: '*' allows all origins
+  // Production: 'http://localhost:3000,https://yourdomain.com'
   CORS_ORIGIN: process.env.CORS_ORIGIN || '*',
   
   // Rate Limiting
