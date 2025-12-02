@@ -65,14 +65,14 @@ export const upload = multer({
  * Returns full URL that works in both development and production
  */
 export const getFileUrl = (filename: string): string => {
-  // Always return full URL
+  // Always return full URL using the download route
   if (config.NODE_ENV === 'production') {
     // Production: Use production domain with API path
-    return `https://publisherauthority.com/api/v1/uploads/applications/${filename}`;
+    return `https://publisherauthority.com/api/v1/applications/files/${filename}`;
   }
   // Development: Use localhost with backend port
   const port = config.PORT || 5003;
-  return `http://localhost:${port}/uploads/applications/${filename}`;
+  return `http://localhost:${port}/api/v1/applications/files/${filename}`;
 };
 
 /**

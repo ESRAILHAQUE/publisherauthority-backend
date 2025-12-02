@@ -128,7 +128,10 @@ app.get("/api/v1/health", (_req: Request, res: Response) => {
 });
 
 // Serve uploaded files statically
+// Support both /uploads and /api/v1/uploads paths
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+app.use("/api/v1/uploads", express.static(path.join(process.cwd(), "uploads")));
+app.use("/v1/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // Mount API routes
 // Support both /api/v1 and /v1 (in case reverse proxy strips /api)

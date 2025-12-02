@@ -3,6 +3,8 @@ import applicationsService from './applications.service';
 import asyncHandler from '../../utils/asyncHandler';
 import { sendSuccess } from '../../utils/apiResponse';
 import { upload } from '../../utils/upload';
+import path from 'path';
+import fs from 'fs';
 
 /**
  * Applications Controller
@@ -27,6 +29,28 @@ class ApplicationsController {
 
     // Otherwise return empty array since this is a public route
     return sendSuccess(res, 200, 'Applications retrieved successfully', { applications: [] });
+  });
+
+  /**
+   * @route   GET /api/v1/applications/files/:filename
+   * @desc    Download application file
+   * @access  Public (for now, can be made private later)
+   */
+  downloadFile = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const { filename } = req.params;
+    const filePath = path.join(process.cwd(), 'uploads', 'applications', filename);
+
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      res.status(404).json({
+        success: false,
+        message: `File not found: ${filename}`,
+      });
+      return;
+    }
+
+    // Send file
+    res.sendFile(filePath);
   });
 
   /**
@@ -124,6 +148,3 @@ class ApplicationsController {
 }
 
 export default new ApplicationsController();
-
-
-
