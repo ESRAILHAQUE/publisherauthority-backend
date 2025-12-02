@@ -9,7 +9,8 @@
     "build": "tsc",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "seed:admin": "ts-node src/scripts/seedAdmin.ts"
   },
   "keywords": [
     "express",
