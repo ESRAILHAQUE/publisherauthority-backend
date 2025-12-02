@@ -26,7 +26,7 @@ interface Config {
 export const config: Config = {
   // Server
   NODE_ENV: process.env.NODE_ENV || 'development',
-  PORT: parseInt(process.env.PORT || '50003', 10),
+  PORT: parseInt(process.env.PORT || '5003', 10),
   
   // Database
   MONGODB_URI: process.env.MONGODB_URI || 'mongodb://localhost:27017/publisherauthority',
