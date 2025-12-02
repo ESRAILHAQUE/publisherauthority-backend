@@ -24,6 +24,13 @@ class ApplicationsService {
       throw new AppError('User already exists with this email', 400);
     }
 
+    // Ensure guestPostUrls is an array and filter out empty values
+    if (applicationData.guestPostUrls) {
+      applicationData.guestPostUrls = applicationData.guestPostUrls.filter(
+        (url: string) => url && url.trim() !== ''
+      );
+    }
+
     // Hash password
     if (applicationData.password) {
       const salt = await bcrypt.genSalt(10);

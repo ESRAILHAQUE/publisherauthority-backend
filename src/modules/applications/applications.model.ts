@@ -85,7 +85,9 @@ const applicationSchema = new Schema<IApplication>(
       type: [String],
       validate: {
         validator: function(v: string[]) {
-          return v.length >= 3;
+          // Filter out empty strings and null values
+          const validUrls = (v || []).filter(url => url && url.trim() !== '');
+          return validUrls.length >= 3;
         },
         message: 'At least 3 guest post URLs are required',
       },
