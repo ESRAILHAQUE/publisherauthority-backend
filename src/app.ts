@@ -122,7 +122,9 @@ app.get('/api/v1/health', (_req: Request, res: Response) => {
 });
 
 // Mount API routes
+// Support both /api/v1 and /v1 (in case reverse proxy strips /api)
 app.use('/api/v1', moduleRoutes);
+app.use('/v1', moduleRoutes);
 
 // ============================================
 // ERROR HANDLING
