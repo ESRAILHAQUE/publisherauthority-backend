@@ -60,10 +60,21 @@ class AuthService {
   }): Promise<{ user: IUser; token: string }> {
     const { email, password } = credentials;
 
+    // Normalize email (lowercase and trim)
+    const normalizedEmail = email.toLowerCase().trim();
+
     // Find user and include password field
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ email: normalizedEmail }).select('+password');
     
-    if (!user || !(await user.comparePassword(password))) {
+    if (!user) {
+      logger.warn(`Login attempt failed: User not found for email: ${normalizedEmail}`);
+      throw new AppError('Invalid email or password', 401);
+    }
+
+    // Compare password
+    const isPasswordValid = await user.comparePassword(password);
+    if (!isPasswordValid) {
+      logger.warn(`Login attempt failed: Invalid password for email: ${normalizedEmail}`);
       throw new AppError('Invalid email or password', 401);
     }
 
