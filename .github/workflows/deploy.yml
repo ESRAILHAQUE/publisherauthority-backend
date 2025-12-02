@@ -6,6 +6,11 @@ on:
       - main
   workflow_dispatch:
 
+# Prevent multiple deployments from running at the same time
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -14,13 +19,74 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: |
+          npm install
+
+      - name: Build project
+        run: |
+          npm run build
+          echo "✓ Build successful"
+
+      - name: Verify build output
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "❌ Build failed: dist directory not found"
+            exit 1
+          fi
+          if [ ! -f "dist/server.js" ]; then
+            echo "❌ Build failed: dist/server.js not found"
+            exit 1
+          fi
+          echo "✓ Build output verified"
+
+      - name: Verify Secrets Configuration
+        run: |
+          if [ -z "${{ secrets.VPS_HOST }}" ]; then
+            echo "❌ VPS_HOST secret is not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.VPS_USERNAME }}" ]; then
+            echo "❌ VPS_USERNAME secret is not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.VPS_SSH_KEY }}" ]; then
+            echo "❌ VPS_SSH_KEY secret is not set"
+            exit 1
+          fi
+          echo "✓ All required secrets are configured"
+
+      - name: Test Network Connectivity
+        continue-on-error: true
+        run: |
+          echo "Testing network connectivity..."
+          VPS_HOST="${{ secrets.VPS_HOST }}"
+          if command -v nc &> /dev/null; then
+            if nc -z -v -w5 "${VPS_HOST}" 22 2>&1; then
+              echo "✓ Port 22 is reachable"
+            else
+              echo "⚠️  Cannot reach port 22 - this is likely a firewall issue"
+              echo "⚠️  Please contact Hostinger support to allow GitHub Actions IPs"
+            fi
+          else
+            echo "⚠️  netcat (nc) not available, skipping connectivity test"
+          fi
+
       - name: Deploy to VPS
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
+          port: 22
+          timeout: 60s
+          command_timeout: 10m
+          debug: true
           script: |
             cd /var/www/publisherauthority/backend
             git pull origin main
