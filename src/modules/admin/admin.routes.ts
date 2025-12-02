@@ -65,3 +65,5 @@ router.delete('/blog/categories/:id', adminController.deleteCategory);
 
 export default router;
 
+
+

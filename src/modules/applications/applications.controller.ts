@@ -27,3 +27,5 @@ class ApplicationsController {
 
 export default new ApplicationsController();
 
+
+

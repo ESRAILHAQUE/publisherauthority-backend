@@ -15,8 +15,11 @@ router.get('/stats', paymentsController.getPaymentStats);
 
 // Publisher routes
 router.get('/', paymentsController.getUserPayments);
+router.get('/:id/download', paymentsController.downloadInvoice);
 router.get('/:id', paymentsController.getPaymentById);
 router.put('/settings', paymentsController.updatePaymentSettings);
 
 export default router;
+
+
 

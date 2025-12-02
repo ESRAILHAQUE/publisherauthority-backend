@@ -101,3 +101,5 @@ supportTicketSchema.index({ ticketNumber: 1 });
 const SupportTicket = mongoose.model<ISupportTicket>('SupportTicket', supportTicketSchema);
 export default SupportTicket;
 
+
+

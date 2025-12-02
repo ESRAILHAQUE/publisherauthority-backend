@@ -112,3 +112,5 @@ paymentSchema.index({ invoiceNumber: 1 });
 const Payment = mongoose.model<IPayment>('Payment', paymentSchema);
 export default Payment;
 
+
+

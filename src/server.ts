@@ -2,6 +2,7 @@ import app from "./app";
 import config from "./config/env";
 import connectDB from "./config/database";
 import logger from "./utils/logger";
+import { startLinkMonitoring } from "./jobs/linkMonitor";
 
 /**
  * Server Startup
@@ -18,6 +19,11 @@ process.on("uncaughtException", (err: Error) => {
 // Connect to MongoDB
 connectDB();
 
+// Start link monitoring cron job
+if (config.NODE_ENV === 'production') {
+  startLinkMonitoring();
+}
+
 // Start server
 const PORT = config.PORT;
 const server = app.listen(PORT, () => {
@@ -25,6 +31,9 @@ const server = app.listen(PORT, () => {
   logger.info(`🚀 Server is running on port ${PORT}`);
   logger.info(`📝 Environment: ${config.NODE_ENV}`);
   logger.info(`🌐 API URL: http://localhost:${PORT}/api/v1`);
+  if (config.NODE_ENV === 'production') {
+    logger.info(`🔗 Link monitoring: Active (daily at 2 AM)`);
+  }
   logger.info("=".repeat(50));
 });
 

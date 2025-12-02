@@ -13,3 +13,5 @@ router.get('/categories', blogController.getAllCategories);
 
 export default router;
 
+
+

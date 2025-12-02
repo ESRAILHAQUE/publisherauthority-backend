@@ -3,6 +3,7 @@ import User from '../auth/auth.model';
 import Website from '../websites/websites.model';
 import AppError from '../../utils/AppError';
 import logger from '../../utils/logger';
+import { autoUpdateAccountLevel } from '../../utils/accountLevel';
 
 /**
  * Orders Service
@@ -139,6 +140,9 @@ class OrdersService {
           completedOrders: 1,
         },
       });
+
+      // Auto-update account level based on new completed orders count
+      await autoUpdateAccountLevel(order.publisherId.toString());
     }
 
     if (status === 'revision-requested' && notes) {

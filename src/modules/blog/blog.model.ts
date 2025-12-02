@@ -148,3 +148,5 @@ blogPostSchema.index({ category: 1 });
 export const Category = mongoose.model<ICategory>('Category', categorySchema);
 export const BlogPost = mongoose.model<IBlogPost>('BlogPost', blogPostSchema);
 
+
+

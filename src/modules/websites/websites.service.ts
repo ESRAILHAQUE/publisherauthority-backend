@@ -3,6 +3,7 @@ import User from '../auth/auth.model';
 import AppError from '../../utils/AppError';
 import logger from '../../utils/logger';
 import crypto from 'crypto';
+import { autoUpdateAccountLevel } from '../../utils/accountLevel';
 
 /**
  * Websites Service
@@ -23,10 +24,7 @@ class WebsitesService {
       status: 'pending',
     });
 
-    // Update user's active websites count
-    await User.findByIdAndUpdate(userId, {
-      $inc: { activeWebsites: 1 },
-    });
+    // Don't increment activeWebsites here - only when status becomes 'active'
 
     logger.info(`Website added: ${website.url} by user ${userId}`);
     return website;
@@ -48,10 +46,7 @@ class WebsitesService {
       })
     );
 
-    // Update user's active websites count
-    await User.findByIdAndUpdate(userId, {
-      $inc: { activeWebsites: websites.length },
-    });
+    // Don't increment activeWebsites here - only when status becomes 'active'
 
     logger.info(`Bulk added ${websites.length} websites for user ${userId}`);
     return websites;
@@ -149,11 +144,20 @@ class WebsitesService {
       throw new AppError('Website not found', 404);
     }
 
+    const wasActive = website.status === 'active';
     website.verificationMethod = method;
     website.verifiedAt = new Date();
     website.status = 'active';
     website.approvedAt = new Date();
     await website.save();
+
+    // If website wasn't active before, update user's active websites count and account level
+    if (!wasActive) {
+      await User.findByIdAndUpdate(website.userId, {
+        $inc: { activeWebsites: 1 },
+      });
+      await autoUpdateAccountLevel(website.userId.toString());
+    }
 
     logger.info(`Website verified: ${website.url}`);
     return website;
@@ -206,6 +210,12 @@ class WebsitesService {
     
     if (accept) {
       website.approvedAt = new Date();
+      
+      // Website is becoming active, update user's active websites count and account level
+      await User.findByIdAndUpdate(userId, {
+        $inc: { activeWebsites: 1 },
+      });
+      await autoUpdateAccountLevel(userId);
     }
 
     await website.save();
@@ -261,8 +271,24 @@ class WebsitesService {
       website.rejectedReason = rejectionReason;
     }
 
+    const wasActive = website.status === 'active';
+    
     if (status === 'active') {
       website.approvedAt = new Date();
+      
+      // If website wasn't active before, update user's active websites count and account level
+      if (!wasActive) {
+        await User.findByIdAndUpdate(website.userId, {
+          $inc: { activeWebsites: 1 },
+        });
+        await autoUpdateAccountLevel(website.userId.toString());
+      }
+    } else if (wasActive && status !== 'active') {
+      // If website was active but is being deactivated, decrease count
+      await User.findByIdAndUpdate(website.userId, {
+        $inc: { activeWebsites: -1 },
+      });
+      await autoUpdateAccountLevel(website.userId.toString());
     }
 
     await website.save();
@@ -273,4 +299,6 @@ class WebsitesService {
 }
 
 export default new WebsitesService();
+
+
 
