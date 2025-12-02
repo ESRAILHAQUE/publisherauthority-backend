@@ -13,7 +13,7 @@ class ApplicationsController {
    * @access  Public (but typically used by authenticated users)
    */
   getApplications = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
-    const { email, status } = req.query;
+    const { email } = req.query;
     
     // If email is provided, get application by email (for status check)
     if (email) {
@@ -24,9 +24,8 @@ class ApplicationsController {
       return sendSuccess(res, 200, 'Application retrieved successfully', { application });
     }
 
-    // Otherwise return empty or require admin auth
-    // For now, return empty array since this is a public route
-    sendSuccess(res, 200, 'Applications retrieved successfully', { applications: [] });
+    // Otherwise return empty array since this is a public route
+    return sendSuccess(res, 200, 'Applications retrieved successfully', { applications: [] });
   });
 
   /**
