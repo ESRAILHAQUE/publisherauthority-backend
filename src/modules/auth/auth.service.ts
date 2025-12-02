@@ -72,6 +72,15 @@ class AuthService {
       throw new AppError('Your account has been deactivated', 403);
     }
 
+    // Check if user's application has been approved
+    // For publisher role, applicationStatus must be 'approved'
+    if (user.role === 'publisher' && user.applicationStatus !== 'approved') {
+      throw new AppError(
+        'Your application is still pending approval. Please wait for admin approval before logging in.',
+        403
+      );
+    }
+
     logger.info(`User logged in: ${user.email}`);
 
     // Generate token
