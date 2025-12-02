@@ -19,6 +19,8 @@ export interface IUser extends Document {
   isActive: boolean;
   paypalEmail?: string;
   applicationStatus: 'pending' | 'approved' | 'rejected';
+  passwordResetToken?: string;
+  passwordResetExpires?: Date;
   totalEarnings: number;
   completedOrders: number;
   activeWebsites: number;
@@ -110,6 +112,14 @@ const userSchema = new Schema<IUser>(
       type: String,
       enum: ['pending', 'approved', 'rejected'],
       default: 'pending',
+    },
+    passwordResetToken: {
+      type: String,
+      select: false,
+    },
+    passwordResetExpires: {
+      type: Date,
+      select: false,
     },
     totalEarnings: {
       type: Number,

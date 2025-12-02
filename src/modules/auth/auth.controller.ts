@@ -79,6 +79,36 @@ class AuthController {
       sendSuccess(res, 200, "Logout successful", {});
     }
   );
+
+  /**
+   * @route   POST /api/v1/auth/forgot-password
+   * @desc    Send password reset email
+   * @access  Public
+   */
+  forgotPassword = asyncHandler(
+    async (req: Request, res: Response, _next: NextFunction) => {
+      const { email } = req.body;
+
+      await authService.forgotPassword(email);
+
+      sendSuccess(res, 200, "If the email exists, a password reset link has been sent.", {});
+    }
+  );
+
+  /**
+   * @route   POST /api/v1/auth/reset-password
+   * @desc    Reset password using token
+   * @access  Public
+   */
+  resetPassword = asyncHandler(
+    async (req: Request, res: Response, _next: NextFunction) => {
+      const { token, password } = req.body;
+
+      await authService.resetPassword(token, password);
+
+      sendSuccess(res, 200, "Password reset successful. You can now login with your new password.", {});
+    }
+  );
 }
 
 export default new AuthController();

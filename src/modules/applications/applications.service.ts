@@ -2,7 +2,6 @@ import Application, { IApplication } from './applications.model';
 import User from '../auth/auth.model';
 import AppError from '../../utils/AppError';
 import logger from '../../utils/logger';
-import bcrypt from 'bcryptjs';
 import { sendApplicationApprovalEmail, sendApplicationRejectionEmail } from '../../utils/email';
 
 /**
@@ -31,11 +30,9 @@ class ApplicationsService {
       );
     }
 
-    // Hash password
-    if (applicationData.password) {
-      const salt = await bcrypt.genSalt(10);
-      applicationData.password = await bcrypt.hash(applicationData.password, salt);
-    }
+    // Don't hash password here - it will be hashed when User is created
+    // Application stores plain password temporarily for security
+    // Password will be hashed by User model's pre-save middleware when user is created
 
     const application = await Application.create(applicationData);
 

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import authController from "./auth.controller";
-import { registerValidation, loginValidation } from "./auth.validation";
+import { registerValidation, loginValidation, forgotPasswordValidation, resetPasswordValidation } from "./auth.validation";
 import validateRequest from "../../middleware/validateRequest";
 
 /**
@@ -17,6 +17,8 @@ router.post(
   authController.register
 );
 router.post("/login", loginValidation, validateRequest, authController.login);
+router.post("/forgot-password", forgotPasswordValidation, validateRequest, authController.forgotPassword);
+router.post("/reset-password", resetPasswordValidation, validateRequest, authController.resetPassword);
 
 // Protected routes (will add auth middleware later)
 router.get("/me", authController.getMe);
