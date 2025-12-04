@@ -1,7 +1,7 @@
-import mongoose from 'mongoose';
-import { BlogPost, Category, IBlogPost, ICategory } from './blog.model';
-import AppError from '../../utils/AppError';
-import logger from '../../utils/logger';
+import mongoose from "mongoose";
+import { BlogPost, Category, IBlogPost, ICategory } from "./blog.model";
+import AppError from "../../utils/AppError";
+import logger from "../../utils/logger";
 
 /**
  * Blog Service
@@ -12,30 +12,27 @@ class BlogService {
    */
   async createPost(postData: Partial<IBlogPost>): Promise<IBlogPost> {
     // Convert category slug/name to ObjectId if needed
-    if (postData.category && typeof postData.category === 'string') {
+    if (postData.category && typeof postData.category === "string") {
       // Check if it's already a valid ObjectId
       const isObjectId = mongoose.Types.ObjectId.isValid(postData.category);
-      
+
       let category;
       if (isObjectId) {
         // Try to find by _id first
         category = await Category.findById(postData.category);
       }
-      
+
       // If not found by _id or not a valid ObjectId, try slug or name
       if (!category) {
         category = await Category.findOne({
-          $or: [
-            { slug: postData.category },
-            { name: postData.category }
-          ]
+          $or: [{ slug: postData.category }, { name: postData.category }],
         });
       }
-      
+
       if (!category) {
         throw new AppError(`Category not found: ${postData.category}`, 404);
       }
-      
+
       postData.category = category._id as any;
     }
 
@@ -62,13 +59,13 @@ class BlogService {
 
     // For public, only show published posts
     if (!filters.admin) {
-      filters.status = 'published';
+      filters.status = "published";
     }
     delete filters.admin;
 
     const posts = await BlogPost.find(filters)
-      .populate('category', 'name slug')
-      .populate('author', 'firstName lastName')
+      .populate("category", "name slug")
+      .populate("author", "firstName lastName")
       .sort({ publishedAt: -1, createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -87,12 +84,12 @@ class BlogService {
    * Get Post by Slug
    */
   async getPostBySlug(slug: string): Promise<IBlogPost> {
-    const post = await BlogPost.findOne({ slug, status: 'published' })
-      .populate('category', 'name slug')
-      .populate('author', 'firstName lastName');
+    const post = await BlogPost.findOne({ slug, status: "published" })
+      .populate("category", "name slug")
+      .populate("author", "firstName lastName");
 
     if (!post) {
-      throw new AppError('Blog post not found', 404);
+      throw new AppError("Blog post not found", 404);
     }
 
     // Increment views
@@ -107,11 +104,11 @@ class BlogService {
    */
   async getPostById(postId: string): Promise<IBlogPost> {
     const post = await BlogPost.findById(postId)
-      .populate('category', 'name slug')
-      .populate('author', 'firstName lastName');
+      .populate("category", "name slug")
+      .populate("author", "firstName lastName");
 
     if (!post) {
-      throw new AppError('Blog post not found', 404);
+      throw new AppError("Blog post not found", 404);
     }
 
     return post;
@@ -120,32 +117,32 @@ class BlogService {
   /**
    * Update Post (Admin)
    */
-  async updatePost(postId: string, updateData: Partial<IBlogPost>): Promise<IBlogPost> {
+  async updatePost(
+    postId: string,
+    updateData: Partial<IBlogPost>
+  ): Promise<IBlogPost> {
     // Convert category slug/name to ObjectId if needed
-    if (updateData.category && typeof updateData.category === 'string') {
+    if (updateData.category && typeof updateData.category === "string") {
       // Check if it's already a valid ObjectId
       const isObjectId = mongoose.Types.ObjectId.isValid(updateData.category);
-      
+
       let category;
       if (isObjectId) {
         // Try to find by _id first
         category = await Category.findById(updateData.category);
       }
-      
+
       // If not found by _id or not a valid ObjectId, try slug or name
       if (!category) {
         category = await Category.findOne({
-          $or: [
-            { slug: updateData.category },
-            { name: updateData.category }
-          ]
+          $or: [{ slug: updateData.category }, { name: updateData.category }],
         });
       }
-      
+
       if (!category) {
         throw new AppError(`Category not found: ${updateData.category}`, 404);
       }
-      
+
       updateData.category = category._id as any;
     }
 
@@ -156,7 +153,7 @@ class BlogService {
     );
 
     if (!post) {
-      throw new AppError('Blog post not found', 404);
+      throw new AppError("Blog post not found", 404);
     }
 
     logger.info(`Blog post updated: ${post.title}`);
@@ -170,7 +167,7 @@ class BlogService {
     const post = await BlogPost.findByIdAndDelete(postId);
 
     if (!post) {
-      throw new AppError('Blog post not found', 404);
+      throw new AppError("Blog post not found", 404);
     }
 
     logger.info(`Blog post deleted: ${post.title}`);
@@ -197,7 +194,10 @@ class BlogService {
   /**
    * Update Category (Admin)
    */
-  async updateCategory(categoryId: string, updateData: Partial<ICategory>): Promise<ICategory> {
+  async updateCategory(
+    categoryId: string,
+    updateData: Partial<ICategory>
+  ): Promise<ICategory> {
     const category = await Category.findByIdAndUpdate(
       categoryId,
       { $set: updateData },
@@ -205,7 +205,7 @@ class BlogService {
     );
 
     if (!category) {
-      throw new AppError('Category not found', 404);
+      throw new AppError("Category not found", 404);
     }
 
     logger.info(`Category updated: ${category.name}`);
@@ -219,7 +219,7 @@ class BlogService {
     const category = await Category.findByIdAndDelete(categoryId);
 
     if (!category) {
-      throw new AppError('Category not found', 404);
+      throw new AppError("Category not found", 404);
     }
 
     logger.info(`Category deleted: ${category.name}`);
@@ -227,6 +227,3 @@ class BlogService {
 }
 
 export default new BlogService();
-
-
-
