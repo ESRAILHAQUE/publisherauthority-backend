@@ -113,6 +113,29 @@ class WebsitesController {
 
     sendSuccess(res, 200, `Counter offer ${accept ? 'accepted' : 'rejected'}`, { website });
   });
+
+  /**
+   * @route   POST /api/v1/websites/:id/counter-offer
+   * @desc    Send counter offer (User)
+   * @access  Private (Publisher)
+   */
+  sendCounterOffer = asyncHandler(async (req: AuthRequest, res: Response, _next: NextFunction) => {
+    const userId = req.user!.id;
+    const { id } = req.params;
+    const { price, notes, terms } = req.body;
+
+    if (!price || price <= 0) {
+      res.status(400).json({
+        success: false,
+        message: 'Price is required and must be greater than 0',
+      });
+      return;
+    }
+
+    const website = await websitesService.sendUserCounterOffer(id, userId, { price, notes, terms });
+
+    sendSuccess(res, 200, 'Counter offer sent successfully', { website });
+  });
 }
 
 export default new WebsitesController();

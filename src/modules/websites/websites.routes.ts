@@ -17,6 +17,7 @@ router.get('/', websitesController.getUserWebsites);
 router.get('/:id', websitesController.getWebsiteById);
 router.put('/:id', websitesController.updateWebsite);
 router.delete('/:id', websitesController.deleteWebsite);
+router.post('/:id/counter-offer', websitesController.sendCounterOffer);
 router.post('/:id/counter-offer/respond', websitesController.respondToCounterOffer);
 
 export default router;

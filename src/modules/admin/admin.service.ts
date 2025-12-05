@@ -102,8 +102,25 @@ class AdminService {
 
     const total = await User.countDocuments({ role: 'publisher', ...filters });
 
+    // Auto-update account levels based on current stats
+    const { autoUpdateAccountLevel } = await import('../../utils/accountLevel');
+    await Promise.all(
+      publishers.map((publisher) => 
+        autoUpdateAccountLevel(publisher._id.toString()).catch((err) => {
+          logger.error(`Failed to auto-update level for publisher ${publisher._id}:`, err);
+        })
+      )
+    );
+
+    // Refresh publishers to get updated levels
+    const updatedPublishers = await User.find({ role: 'publisher', ...filters })
+      .select('-password')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
     return {
-      publishers,
+      publishers: updatedPublishers,
       total,
       page,
       pages: Math.ceil(total / limit),

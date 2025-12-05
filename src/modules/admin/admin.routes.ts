@@ -27,6 +27,7 @@ router.put('/publishers/:id/status', adminController.updatePublisherStatus);
 router.get('/websites', adminController.getAllWebsites);
 router.put('/websites/:id/verify', adminController.verifyWebsite);
 router.post('/websites/:id/counter-offer', adminController.sendCounterOffer);
+router.post('/websites/:id/counter-offer/accept', adminController.acceptUserCounterOffer);
 router.put('/websites/:id/status', adminController.updateWebsiteStatus);
 
 // Orders Management

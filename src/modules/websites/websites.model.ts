@@ -10,14 +10,18 @@ export interface IWebsite extends Document {
   monthlyTraffic: number;
   niche: string;
   description?: string;
+  price: number;
   status: 'pending' | 'counter-offer' | 'active' | 'rejected' | 'deleted';
   verificationMethod?: 'tag' | 'article';
   verificationCode?: string;
   verificationArticleUrl?: string;
   verifiedAt?: Date;
   counterOffer?: {
-    notes: string;
-    terms: string;
+    price: number;
+    notes?: string;
+    terms?: string;
+    offeredBy: 'admin' | 'user';
+    offeredAt: Date;
     status: 'pending' | 'accepted' | 'rejected';
   };
   submittedAt: Date;
@@ -64,6 +68,11 @@ const websiteSchema = new Schema<IWebsite>(
       type: String,
       trim: true,
     },
+    price: {
+      type: Number,
+      required: [true, 'Price is required'],
+      min: [0, 'Price cannot be negative'],
+    },
     status: {
       type: String,
       enum: {
@@ -87,11 +96,24 @@ const websiteSchema = new Schema<IWebsite>(
       type: Date,
     },
     counterOffer: {
+      price: {
+        type: Number,
+        min: [0, 'Counter offer price cannot be negative'],
+      },
       notes: String,
       terms: String,
+      offeredBy: {
+        type: String,
+        enum: ['admin', 'user'],
+      },
+      offeredAt: {
+        type: Date,
+        default: Date.now,
+      },
       status: {
         type: String,
         enum: ['pending', 'accepted', 'rejected'],
+        default: 'pending',
       },
     },
     submittedAt: {
@@ -109,6 +131,22 @@ const websiteSchema = new Schema<IWebsite>(
     timestamps: true,
   }
 );
+
+// Validate counterOffer when it is being set or modified
+websiteSchema.pre('save', function(next) {
+  // Only validate if counterOffer is being modified and has data
+  if (this.isModified('counterOffer') && this.counterOffer) {
+    const co = this.counterOffer as any;
+    // If counterOffer is being set, it must have required fields
+    if (co.price === undefined || co.price === null || co.price <= 0) {
+      return next(new Error('Counter offer price is required and must be greater than 0'));
+    }
+    if (!co.offeredBy || !['admin', 'user'].includes(co.offeredBy)) {
+      return next(new Error('Counter offer offeredBy is required and must be "admin" or "user"'));
+    }
+  }
+  next();
+});
 
 // Indexes for better query performance
 websiteSchema.index({ userId: 1, status: 1 });

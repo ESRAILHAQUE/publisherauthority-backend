@@ -6,41 +6,47 @@ import logger from './logger';
  * Automatically updates user account level based on completed orders and active websites
  */
 
-interface LevelRequirements {
-  orders: number;
-  websites: number;
-}
-
-const LEVEL_REQUIREMENTS: Record<string, LevelRequirements> = {
-  silver: { orders: 0, websites: 0 },
-  gold: { orders: 50, websites: 30 },
-  premium: { orders: 150, websites: 100 },
-};
+// Level requirements for reference (used in comments and documentation)
+// Silver: 0-49 orders, 30+ active websites
+// Gold: 50-149 orders, 100+ active websites
+// Premium: 150-300 orders, 500+ active websites
 
 /**
  * Calculate account level based on completed orders and active websites
+ * 
+ * Silver: 0–49 orders completed (30 Active website)
+ * Gold: 50–149 orders completed (100 Active website)
+ * Premium: 150–300 orders completed (500 Active website)
  */
 export function calculateAccountLevel(
   completedOrders: number,
   activeWebsites: number
 ): 'silver' | 'gold' | 'premium' {
-  // Premium level requirements
+  // Premium level requirements: 150-300 orders AND 500 active websites
   if (
-    completedOrders >= LEVEL_REQUIREMENTS.premium.orders &&
-    activeWebsites >= LEVEL_REQUIREMENTS.premium.websites
+    completedOrders >= 150 &&
+    completedOrders <= 300 &&
+    activeWebsites >= 500
   ) {
     return 'premium';
   }
 
-  // Gold level requirements
+  // Gold level requirements: 50-149 orders AND 100 active websites
   if (
-    completedOrders >= LEVEL_REQUIREMENTS.gold.orders &&
-    activeWebsites >= LEVEL_REQUIREMENTS.gold.websites
+    completedOrders >= 50 &&
+    completedOrders < 150 &&
+    activeWebsites >= 100
   ) {
     return 'gold';
   }
 
-  // Default to silver
+  // Silver level requirements: 0-49 orders AND 30 active websites
+  // If user has less than 30 active websites, they remain at silver (default)
+  if (activeWebsites >= 30) {
+    return 'silver';
+  }
+
+  // Default to silver (even if they don't meet the 30 websites requirement yet)
   return 'silver';
 }
 

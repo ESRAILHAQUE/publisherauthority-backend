@@ -3,6 +3,8 @@ import config from "./config/env";
 import connectDB from "./config/database";
 import logger from "./utils/logger";
 import { startLinkMonitoring } from "./jobs/linkMonitor";
+import { initializeSocket } from "./config/socket";
+import { Server as HttpServer } from "http";
 
 /**
  * Server Startup
@@ -26,7 +28,7 @@ if (config.NODE_ENV === 'production') {
 
 // Start server
 const PORT = config.PORT;
-const server = app.listen(PORT, () => {
+const server: HttpServer = app.listen(PORT, () => {
   logger.info("=".repeat(50));
   logger.info(`🚀 Server is running on port ${PORT}`);
   logger.info(`📝 Environment: ${config.NODE_ENV}`);
@@ -36,6 +38,10 @@ const server = app.listen(PORT, () => {
   }
   logger.info("=".repeat(50));
 });
+
+// Initialize Socket.IO
+initializeSocket(server);
+logger.info("🔌 Socket.IO initialized");
 
 // Handle unhandled promise rejections
 process.on("unhandledRejection", (err: Error) => {
