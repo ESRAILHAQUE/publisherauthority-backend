@@ -63,6 +63,37 @@ class BlogService {
     }
     delete filters.admin;
 
+    // Handle category filter - convert slug to ObjectId if needed
+    if (filters.category) {
+      const categoryValue = filters.category;
+      
+      // Check if it's already a valid ObjectId
+      const isObjectId = mongoose.Types.ObjectId.isValid(categoryValue);
+      
+      let category;
+      if (isObjectId) {
+        // Try to find by _id first
+        category = await Category.findById(categoryValue);
+      }
+      
+      // If not found by _id or not a valid ObjectId, try slug or name
+      if (!category) {
+        category = await Category.findOne({
+          $or: [
+            { slug: categoryValue },
+            { name: categoryValue }
+          ]
+        });
+      }
+      
+      if (category) {
+        filters.category = category._id;
+      } else {
+        // If category not found, return empty results
+        filters.category = new mongoose.Types.ObjectId(); // Non-existent ID
+      }
+    }
+
     const posts = await BlogPost.find(filters)
       .populate("category", "name slug")
       .populate("author", "firstName lastName")
