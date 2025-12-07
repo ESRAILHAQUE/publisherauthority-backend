@@ -102,7 +102,11 @@ jobs:
             echo "✓ Dependencies installed"
 
             echo "Building application..."
-            npm run build
+            # Increase Node.js memory limit for build
+            NODE_OPTIONS="--max-old-space-size=1024" npm run build || {
+              echo "⚠️ Build failed, trying with more memory..."
+              NODE_OPTIONS="--max-old-space-size=2048" npm run build
+            }
             echo "✓ Build completed"
 
             echo "Verifying build output..."
