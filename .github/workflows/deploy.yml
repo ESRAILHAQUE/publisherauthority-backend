@@ -96,26 +96,30 @@ jobs:
               git reset --hard origin/main
             }
             echo "✓ Code updated"
-            
+
             echo "Installing dependencies..."
             npm install
             echo "✓ Dependencies installed"
-            
+
             echo "Building application..."
             npm run build
             echo "✓ Build completed"
-            
+
             echo "Verifying build output..."
             if [ ! -d "dist" ] || [ ! -f "dist/server.js" ]; then
               echo "❌ Build failed: dist/server.js not found"
               exit 1
             fi
             echo "✓ Build verified"
+
+            echo "Stopping old PM2 process (if exists)..."
+            pm2 stop publisherauthority-backend 2>/dev/null || true
+            pm2 delete publisherauthority-backend 2>/dev/null || true
             
-            echo "Restarting PM2 process..."
-            pm2 restart publisherauthority-backend --update-env || pm2 start ecosystem.config.js
+            echo "Starting PM2 with optimized config..."
+            pm2 start ecosystem.config.js
             pm2 save
-            echo "✓ Backend restarted successfully"
-            
+            echo "✓ Backend restarted with fork mode"
+
             # Show PM2 status
             pm2 show publisherauthority-backend
