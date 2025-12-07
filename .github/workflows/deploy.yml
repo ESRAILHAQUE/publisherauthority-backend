@@ -89,8 +89,33 @@ jobs:
           debug: true
           script: |
             cd /var/www/publisherauthority/backend
-            git pull origin main
+            echo "Pulling latest code from GitHub..."
+            git pull origin main || {
+              echo "⚠️ Git pull failed, trying to reset..."
+              git fetch origin main
+              git reset --hard origin/main
+            }
+            echo "✓ Code updated"
+            
+            echo "Installing dependencies..."
             npm install
+            echo "✓ Dependencies installed"
+            
+            echo "Building application..."
             npm run build
-            pm2 restart publisherauthority-backend || pm2 start dist/server.js --name publisherauthority-backend
+            echo "✓ Build completed"
+            
+            echo "Verifying build output..."
+            if [ ! -d "dist" ] || [ ! -f "dist/server.js" ]; then
+              echo "❌ Build failed: dist/server.js not found"
+              exit 1
+            fi
+            echo "✓ Build verified"
+            
+            echo "Restarting PM2 process..."
+            pm2 restart publisherauthority-backend --update-env || pm2 start ecosystem.config.js
             pm2 save
+            echo "✓ Backend restarted successfully"
+            
+            # Show PM2 status
+            pm2 show publisherauthority-backend
