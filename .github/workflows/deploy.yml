@@ -42,15 +42,25 @@ jobs:
             echo "📥 Pulling latest code..."
             git pull origin main || (git fetch origin main && git reset --hard origin/main)
             
-            echo "📦 Installing dependencies (using npm ci for faster install)..."
-            npm ci --production=false || npm install
+            # Check if package.json changed (only install if needed)
+            if git diff HEAD@{1} HEAD --name-only | grep -q "package.json\|package-lock.json"; then
+              echo "📦 Package files changed, installing dependencies..."
+              npm ci --production=false || npm install
+            else
+              echo "⏭️  Skipping npm install (no package changes)"
+            fi
             
-            echo "🔨 Building application..."
-            NODE_OPTIONS="--max-old-space-size=1024" npm run build
+            # Check if source files changed (only build if needed)
+            if git diff HEAD@{1} HEAD --name-only | grep -q "\.ts$\|\.tsx$\|tsconfig.json"; then
+              echo "🔨 Source files changed, building application..."
+              nice -n 10 NODE_OPTIONS="--max-old-space-size=512" npm run build
+            else
+              echo "⏭️  Skipping build (no source changes)"
+            fi
             
             if [ ! -f "dist/server.js" ]; then
-              echo "❌ Build failed"
-              exit 1
+              echo "⚠️  dist/server.js not found, forcing build..."
+              nice -n 10 NODE_OPTIONS="--max-old-space-size=512" npm run build
             fi
             
             echo "🔄 Restarting backend..."
@@ -60,4 +70,4 @@ jobs:
             pm2 save
             
             echo "✅ Deployment complete"
-            pm2 show publisherauthority-backend | head -15
+            pm2 show publisherauthority-backend | head -10
