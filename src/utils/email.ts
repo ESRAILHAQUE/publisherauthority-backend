@@ -190,3 +190,84 @@ export async function sendPaymentNotificationEmail(
     html,
   });
 }
+
+/**
+ * Send Application Submission Email (Email Verification)
+ */
+export async function sendApplicationVerificationEmail(
+  userEmail: string,
+  userName: string
+): Promise<void> {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #3F207F;">Application Received</h2>
+      <p>Hi ${userName},</p>
+      <p>Thank you for submitting your publisher application to Publisher Authority!</p>
+      <p>We have received your application and our team will review it shortly. You will receive an email notification once your application has been reviewed.</p>
+      <p>In the meantime, if you have any questions, please don't hesitate to contact our support team.</p>
+      <p>Best regards,<br>The Publisher Authority Team</p>
+    </div>
+  `;
+
+  await sendEmail({
+    to: userEmail,
+    subject: 'Application Received - Publisher Authority',
+    html,
+  });
+}
+
+/**
+ * Send Counter Offer Email
+ */
+export async function sendCounterOfferEmail(
+  userEmail: string,
+  userName: string,
+  websiteUrl: string,
+  counterOfferPrice: number,
+  notes?: string
+): Promise<void> {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #3F207F;">Counter Offer Received</h2>
+      <p>Hi ${userName},</p>
+      <p>You have received a counter offer for your website: <strong>${websiteUrl}</strong></p>
+      <p><strong>Counter Offer Price:</strong> $${counterOfferPrice.toFixed(2)}</p>
+      ${notes ? `<p><strong>Notes:</strong> ${notes}</p>` : ''}
+      <p><a href="${config.FRONTEND_URL}/dashboard/websites" style="background-color: #3F207F; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Counter Offer</a></p>
+      <p>Please log in to your dashboard to accept or reject this counter offer.</p>
+      <p>Best regards,<br>The Publisher Authority Team</p>
+    </div>
+  `;
+
+  await sendEmail({
+    to: userEmail,
+    subject: `Counter Offer for ${websiteUrl}`,
+    html,
+  });
+}
+
+/**
+ * Send Website Approval Email (Landing Approval)
+ */
+export async function sendWebsiteApprovalEmail(
+  userEmail: string,
+  userName: string,
+  websiteUrl: string
+): Promise<void> {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #2EE6B7;">Website Approved!</h2>
+      <p>Hi ${userName},</p>
+      <p>Great news! Your website <strong>${websiteUrl}</strong> has been approved and is now active.</p>
+      <p>You can now start receiving orders for this website. We will notify you whenever a new order is assigned to you.</p>
+      <p><a href="${config.FRONTEND_URL}/dashboard/websites" style="background-color: #3F207F; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Your Websites</a></p>
+      <p>Best regards,<br>The Publisher Authority Team</p>
+    </div>
+  `;
+
+  await sendEmail({
+    to: userEmail,
+    subject: `Website Approved: ${websiteUrl}`,
+    html,
+  });
+}

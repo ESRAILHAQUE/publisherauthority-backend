@@ -9,6 +9,7 @@ export interface IApplication extends Document {
   lastName: string;
   email: string;
   password: string;
+  contactNumber?: string;
   country: string;
   hearAboutUs?: string;
   guestPostExperience?: string;
@@ -78,6 +79,10 @@ const applicationSchema = new Schema<IApplication>(
       type: String,
       required: [true, "Password is required"],
       select: false,
+    },
+    contactNumber: {
+      type: String,
+      trim: true,
     },
     country: {
       type: String,

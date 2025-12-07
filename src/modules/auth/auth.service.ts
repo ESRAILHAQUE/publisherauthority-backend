@@ -132,18 +132,84 @@ class AuthService {
 
   /**
    * Forgot Password - Generate reset token and send email
-   * Only sends email if user exists in database
+   * Only sends email if user exists in database and application is approved
    */
   async forgotPassword(email: string): Promise<void> {
     const normalizedEmail = email.toLowerCase().trim();
     
-    // Find user in database
-    const user = await User.findOne({ email: normalizedEmail });
+    logger.info(`Password reset requested for email: ${normalizedEmail}`);
     
-    // If user doesn't exist in database, throw error
+    // Find user in database - try exact match first
+    let user = await User.findOne({ email: normalizedEmail });
+    
+    // If not found, try case-insensitive regex match
+    if (!user) {
+      const escapedEmail = normalizedEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      user = await User.findOne({ 
+        email: { $regex: new RegExp(`^${escapedEmail}$`, 'i') }
+      });
+    }
+    
+    // If still not found, try to handle dot variations (common typo)
+    // e.g., "saigejhonseo@gmail.com" should match "saigejhon.seo@gmail.com"
+    if (!user) {
+      const emailParts = normalizedEmail.split('@');
+      if (emailParts.length === 2) {
+        const localPart = emailParts[0];
+        const domain = emailParts[1];
+        
+        // Try to find emails where dots might be missing or added
+        // Create a pattern that matches the local part with or without dots
+        // This is a fuzzy match for common typos
+        const localPartPattern = localPart.split('').join('[.]?'); // Match with optional dots
+        const fuzzyPattern = `^${localPartPattern}@${domain.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`;
+        
+        const similarUsers = await User.find({ 
+          email: { $regex: new RegExp(fuzzyPattern, 'i') }
+        }).select('email').limit(5);
+        
+        if (similarUsers.length === 1) {
+          // If exactly one match found, use it
+          user = await User.findById(similarUsers[0]._id);
+          logger.info(`Found user with similar email: ${similarUsers[0].email} (matched ${normalizedEmail})`);
+        } else if (similarUsers.length > 1) {
+          // Multiple matches - log for debugging but don't auto-select
+          logger.warn(`Multiple similar emails found for ${normalizedEmail}: ${similarUsers.map(u => u.email).join(', ')}`);
+        }
+      }
+    }
+    
+    // If still not found, log for debugging
     if (!user) {
       logger.warn(`Password reset requested for non-existent email: ${normalizedEmail}`);
+      
+      // Debug: Check what emails exist in database (only in development)
+      if (process.env.NODE_ENV === 'development') {
+        const allUsers = await User.find({}).select('email').limit(10);
+        logger.warn(`Sample emails in database: ${allUsers.map(u => `"${u.email}"`).join(', ')}`);
+        
+        // Try to find similar emails by prefix
+        const emailPrefix = normalizedEmail.split('@')[0];
+        const similarUsers = await User.find({ 
+          email: { $regex: emailPrefix, $options: 'i' }
+        }).select('email').limit(5);
+        if (similarUsers.length > 0) {
+          logger.warn(`Similar emails found: ${similarUsers.map(u => `"${u.email}"`).join(', ')}`);
+        }
+      }
+      
       throw new AppError('No account found with this email address. Please check your email or sign up.', 404);
+    }
+    
+    logger.info(`User found for password reset: ${user.email} (ID: ${user._id})`);
+
+    // Check if user's application has been approved (for publisher role)
+    // Only check if applicationStatus exists and is not approved
+    if (user.role === 'publisher' && user.applicationStatus && user.applicationStatus !== 'approved') {
+      throw new AppError(
+        'Your application is still pending approval. Please wait for admin approval before resetting your password.',
+        403
+      );
     }
 
     // Generate reset token

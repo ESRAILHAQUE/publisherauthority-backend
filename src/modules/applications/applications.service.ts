@@ -2,7 +2,7 @@ import Application, { IApplication } from './applications.model';
 import User from '../auth/auth.model';
 import AppError from '../../utils/AppError';
 import logger from '../../utils/logger';
-import { sendApplicationApprovalEmail, sendApplicationRejectionEmail } from '../../utils/email';
+import { sendApplicationApprovalEmail, sendApplicationRejectionEmail, sendApplicationVerificationEmail } from '../../utils/email';
 
 /**
  * Applications Service
@@ -37,6 +37,18 @@ class ApplicationsService {
     const application = await Application.create(applicationData);
 
     logger.info(`New application submitted: ${application.email}`);
+    
+    // Send application verification email
+    try {
+      await sendApplicationVerificationEmail(
+        application.email,
+        `${application.firstName} ${application.lastName}`
+      );
+    } catch (emailError: any) {
+      logger.error('Failed to send application verification email:', emailError);
+      // Don't fail the application submission if email fails
+    }
+    
     return application;
   }
 

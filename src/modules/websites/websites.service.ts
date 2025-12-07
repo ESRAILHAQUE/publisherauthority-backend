@@ -5,6 +5,7 @@ import logger from '../../utils/logger';
 import crypto from 'crypto';
 import { autoUpdateAccountLevel } from '../../utils/accountLevel';
 import { emitAdminNotification, emitUserNotification } from '../../config/socket';
+import { sendCounterOfferEmail, sendWebsiteApprovalEmail } from '../../utils/email';
 
 /**
  * Websites Service
@@ -179,6 +180,21 @@ class WebsitesService {
         $inc: { activeWebsites: 1 },
       });
       await autoUpdateAccountLevel(website.userId.toString());
+      
+      // Send website approval email
+      try {
+        const user = await User.findById(website.userId).select('firstName lastName email');
+        if (user) {
+          await sendWebsiteApprovalEmail(
+            user.email,
+            `${user.firstName} ${user.lastName}`,
+            website.url
+          );
+        }
+      } catch (emailError: any) {
+        logger.error('Failed to send website approval email:', emailError);
+        // Don't fail the verification if email fails
+      }
     }
 
     logger.info(`Website verified: ${website.url}`);
@@ -228,6 +244,23 @@ class WebsitesService {
       logger.error('Failed to emit counter offer notification:', error);
     }
     
+    // Send counter offer email
+    try {
+      const user = await User.findById(website.userId).select('firstName lastName email');
+      if (user) {
+        await sendCounterOfferEmail(
+          user.email,
+          `${user.firstName} ${user.lastName}`,
+          website.url,
+          counterOfferData.price,
+          counterOfferData.notes
+        );
+      }
+    } catch (emailError: any) {
+      logger.error('Failed to send counter offer email:', emailError);
+      // Don't fail the counter offer if email fails
+    }
+    
     return website;
   }
 
@@ -266,6 +299,21 @@ class WebsitesService {
         $inc: { activeWebsites: 1 },
       });
       await autoUpdateAccountLevel(userId);
+      
+      // Send website approval email
+      try {
+        const user = await User.findById(userId).select('firstName lastName email');
+        if (user) {
+          await sendWebsiteApprovalEmail(
+            user.email,
+            `${user.firstName} ${user.lastName}`,
+            website.url
+          );
+        }
+      } catch (emailError: any) {
+        logger.error('Failed to send website approval email:', emailError);
+        // Don't fail the acceptance if email fails
+      }
     }
 
     await website.save();
@@ -382,6 +430,21 @@ class WebsitesService {
       $inc: { activeWebsites: 1 },
     });
     await autoUpdateAccountLevel(website.userId.toString());
+    
+    // Send website approval email
+    try {
+      const user = await User.findById(website.userId).select('firstName lastName email');
+      if (user) {
+        await sendWebsiteApprovalEmail(
+          user.email,
+          `${user.firstName} ${user.lastName}`,
+          website.url
+        );
+      }
+    } catch (emailError: any) {
+      logger.error('Failed to send website approval email:', emailError);
+      // Don't fail the acceptance if email fails
+    }
 
     logger.info(`User counter offer accepted for website: ${website.url} - Price: $${website.price}`);
     
@@ -457,6 +520,21 @@ class WebsitesService {
           $inc: { activeWebsites: 1 },
         });
         await autoUpdateAccountLevel(website.userId.toString());
+        
+        // Send website approval email
+        try {
+          const user = await User.findById(website.userId).select('firstName lastName email');
+          if (user) {
+            await sendWebsiteApprovalEmail(
+              user.email,
+              `${user.firstName} ${user.lastName}`,
+              website.url
+            );
+          }
+        } catch (emailError: any) {
+          logger.error('Failed to send website approval email:', emailError);
+          // Don't fail the status update if email fails
+        }
       }
     } else if (wasActive && status !== 'active') {
       // If website was active but is being deactivated, decrease count

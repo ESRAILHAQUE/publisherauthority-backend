@@ -3,7 +3,8 @@ module.exports = {
     name: 'publisherauthority-backend',
     script: './dist/server.js',
     instances: 1,
-    exec_mode: 'cluster',
+    exec_mode: 'fork',  // Changed from 'cluster' to 'fork' for lower CPU usage
+    max_memory_restart: '500M',  // Auto-restart if memory exceeds 500MB
     env: {
       NODE_ENV: 'production',
       PORT: 5001
