@@ -76,13 +76,14 @@ class WebsitesService {
   /**
    * Get User Websites
    */
-  async getUserWebsites(userId: string, filters: any = {}): Promise<IWebsite[]> {
+  async getUserWebsites(userId: string, filters: any = {}): Promise<any[]> {
     const websites = await Website.find({
       userId,
       ...filters,
     })
       .populate('userId', 'firstName lastName email accountLevel')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     return websites;
   }

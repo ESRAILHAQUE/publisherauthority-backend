@@ -115,7 +115,7 @@ jobs:
             echo "Stopping old PM2 process (if exists)..."
             pm2 stop publisherauthority-backend 2>/dev/null || true
             pm2 delete publisherauthority-backend 2>/dev/null || true
-            
+
             echo "Starting PM2 with optimized config..."
             pm2 start ecosystem.config.js
             pm2 save

@@ -50,7 +50,7 @@ class BlogService {
     page = 1,
     limit = 20
   ): Promise<{
-    posts: IBlogPost[];
+    posts: any[];
     total: number;
     page: number;
     pages: number;
@@ -99,7 +99,8 @@ class BlogService {
       .populate("author", "firstName lastName")
       .sort({ publishedAt: -1, createdAt: -1 })
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .lean();
 
     const total = await BlogPost.countDocuments(filters);
 

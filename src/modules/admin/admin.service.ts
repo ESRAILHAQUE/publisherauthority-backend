@@ -98,7 +98,8 @@ class AdminService {
       .select('-password')
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .lean();
 
     const total = await User.countDocuments({ role: 'publisher', ...filters });
 
@@ -117,7 +118,8 @@ class AdminService {
       .select('-password')
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .lean();
 
     return {
       publishers: updatedPublishers,
@@ -139,9 +141,9 @@ class AdminService {
 
     // Get publisher's websites, orders, and payments
     const [websites, orders, payments] = await Promise.all([
-      Website.find({ userId: publisherId }),
-      Order.find({ publisherId }).limit(10).sort({ createdAt: -1 }),
-      Payment.find({ userId: publisherId }).limit(10).sort({ invoiceDate: -1 }),
+      Website.find({ userId: publisherId }).lean(),
+      Order.find({ publisherId }).limit(10).sort({ createdAt: -1 }).lean(),
+      Payment.find({ userId: publisherId }).limit(10).sort({ invoiceDate: -1 }).lean(),
     ]);
 
     return {
@@ -193,10 +195,10 @@ class AdminService {
    */
   async getRecentActivity(_limit = 20) {
     const [recentApplications, recentWebsites, recentOrders, recentPayments] = await Promise.all([
-      Application.find().sort({ submittedAt: -1 }).limit(5),
-      Website.find().sort({ submittedAt: -1 }).limit(5).populate('userId', 'firstName lastName email'),
-      Order.find().sort({ assignedAt: -1 }).limit(5).populate('publisherId', 'firstName lastName'),
-      Payment.find().sort({ invoiceDate: -1 }).limit(5).populate('userId', 'firstName lastName'),
+      Application.find().sort({ submittedAt: -1 }).limit(5).lean(),
+      Website.find().sort({ submittedAt: -1 }).limit(5).populate('userId', 'firstName lastName email').lean(),
+      Order.find().sort({ assignedAt: -1 }).limit(5).populate('publisherId', 'firstName lastName').lean(),
+      Payment.find().sort({ invoiceDate: -1 }).limit(5).populate('userId', 'firstName lastName').lean(),
     ]);
 
     return {

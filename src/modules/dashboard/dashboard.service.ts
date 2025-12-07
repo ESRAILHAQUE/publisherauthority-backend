@@ -54,7 +54,8 @@ class DashboardService {
     const recentOrders = await Order.find({ publisherId: userId })
       .populate('websiteId', 'url')
       .sort({ createdAt: -1 })
-      .limit(5);
+      .limit(5)
+      .lean();
 
     // Get upcoming deadlines
     const upcomingDeadlines = await Order.find({
@@ -64,7 +65,8 @@ class DashboardService {
     })
       .populate('websiteId', 'url')
       .sort({ deadline: 1 })
-      .limit(5);
+      .limit(5)
+      .lean();
 
     // Calculate level progress
     const levelProgress = this.calculateLevelProgress(
