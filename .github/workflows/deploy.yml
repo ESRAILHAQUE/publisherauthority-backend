@@ -19,63 +19,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: "20"
-
-      - name: Install dependencies
-        run: |
-          npm install
-
-      - name: Build project
-        run: |
-          npm run build
-          echo "✓ Build successful"
-
-      - name: Verify build output
-        run: |
-          if [ ! -d "dist" ]; then
-            echo "❌ Build failed: dist directory not found"
-            exit 1
-          fi
-          if [ ! -f "dist/server.js" ]; then
-            echo "❌ Build failed: dist/server.js not found"
-            exit 1
-          fi
-          echo "✓ Build output verified"
-
       - name: Verify Secrets Configuration
         run: |
-          if [ -z "${{ secrets.VPS_HOST }}" ]; then
-            echo "❌ VPS_HOST secret is not set"
+          if [ -z "${{ secrets.VPS_HOST }}" ] || [ -z "${{ secrets.VPS_USERNAME }}" ] || [ -z "${{ secrets.VPS_SSH_KEY }}" ]; then
+            echo "❌ Required secrets are not set"
             exit 1
           fi
-          if [ -z "${{ secrets.VPS_USERNAME }}" ]; then
-            echo "❌ VPS_USERNAME secret is not set"
-            exit 1
-          fi
-          if [ -z "${{ secrets.VPS_SSH_KEY }}" ]; then
-            echo "❌ VPS_SSH_KEY secret is not set"
-            exit 1
-          fi
-          echo "✓ All required secrets are configured"
-
-      - name: Test Network Connectivity
-        continue-on-error: true
-        run: |
-          echo "Testing network connectivity..."
-          VPS_HOST="${{ secrets.VPS_HOST }}"
-          if command -v nc &> /dev/null; then
-            if nc -z -v -w5 "${VPS_HOST}" 22 2>&1; then
-              echo "✓ Port 22 is reachable"
-            else
-              echo "⚠️  Cannot reach port 22 - this is likely a firewall issue"
-              echo "⚠️  Please contact Hostinger support to allow GitHub Actions IPs"
-            fi
-          else
-            echo "⚠️  netcat (nc) not available, skipping connectivity test"
-          fi
+          echo "✓ Secrets configured"
 
       - name: Deploy to VPS
         uses: appleboy/ssh-action@master
@@ -85,45 +35,29 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: 22
           timeout: 60s
-          command_timeout: 10m
+          command_timeout: 8m
           debug: true
           script: |
             cd /var/www/publisherauthority/backend
-            echo "Pulling latest code from GitHub..."
-            git pull origin main || {
-              echo "⚠️ Git pull failed, trying to reset..."
-              git fetch origin main
-              git reset --hard origin/main
-            }
-            echo "✓ Code updated"
-
-            echo "Installing dependencies..."
-            npm install
-            echo "✓ Dependencies installed"
-
-            echo "Building application..."
-            # Increase Node.js memory limit for build
-            NODE_OPTIONS="--max-old-space-size=1024" npm run build || {
-              echo "⚠️ Build failed, trying with more memory..."
-              NODE_OPTIONS="--max-old-space-size=2048" npm run build
-            }
-            echo "✓ Build completed"
-
-            echo "Verifying build output..."
-            if [ ! -d "dist" ] || [ ! -f "dist/server.js" ]; then
-              echo "❌ Build failed: dist/server.js not found"
+            echo "📥 Pulling latest code..."
+            git pull origin main || (git fetch origin main && git reset --hard origin/main)
+            
+            echo "📦 Installing dependencies (using npm ci for faster install)..."
+            npm ci --production=false || npm install
+            
+            echo "🔨 Building application..."
+            NODE_OPTIONS="--max-old-space-size=1024" npm run build
+            
+            if [ ! -f "dist/server.js" ]; then
+              echo "❌ Build failed"
               exit 1
             fi
-            echo "✓ Build verified"
-
-            echo "Stopping old PM2 process (if exists)..."
+            
+            echo "🔄 Restarting backend..."
             pm2 stop publisherauthority-backend 2>/dev/null || true
             pm2 delete publisherauthority-backend 2>/dev/null || true
-
-            echo "Starting PM2 with optimized config..."
             pm2 start ecosystem.config.js
             pm2 save
-            echo "✓ Backend restarted with fork mode"
-
-            # Show PM2 status
-            pm2 show publisherauthority-backend
+            
+            echo "✅ Deployment complete"
+            pm2 show publisherauthority-backend | head -15
