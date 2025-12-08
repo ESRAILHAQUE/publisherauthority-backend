@@ -41,7 +41,7 @@ jobs:
             cd /var/www/publisherauthority/backend
             echo "📥 Pulling latest code..."
             git pull origin main || (git fetch origin main && git reset --hard origin/main)
-            
+
             # Check if package.json changed (only install if needed)
             if git diff HEAD@{1} HEAD --name-only | grep -q "package.json\|package-lock.json"; then
               echo "📦 Package files changed, installing dependencies..."
@@ -49,7 +49,7 @@ jobs:
             else
               echo "⏭️  Skipping npm install (no package changes)"
             fi
-            
+
             # Check if source files changed (only build if needed)
             if git diff HEAD@{1} HEAD --name-only | grep -q "\.ts$\|\.tsx$\|tsconfig.json"; then
               echo "🔨 Source files changed, building application..."
@@ -57,17 +57,17 @@ jobs:
             else
               echo "⏭️  Skipping build (no source changes)"
             fi
-            
+
             if [ ! -f "dist/server.js" ]; then
               echo "⚠️  dist/server.js not found, forcing build..."
               nice -n 10 NODE_OPTIONS="--max-old-space-size=512" npm run build
             fi
-            
+
             echo "🔄 Restarting backend..."
             pm2 stop publisherauthority-backend 2>/dev/null || true
             pm2 delete publisherauthority-backend 2>/dev/null || true
             pm2 start ecosystem.config.js
             pm2 save
-            
+
             echo "✅ Deployment complete"
             pm2 show publisherauthority-backend | head -10
