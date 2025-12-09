@@ -54,18 +54,18 @@ jobs:
             # Use git diff with previous commit, or force build if diff fails
             if git diff HEAD@{1} HEAD --name-only 2>/dev/null | grep -q "\.ts$\|\.tsx$\|tsconfig.json\|applications\.routes\|applications\.controller\|applications\.service\|applications\.model"; then
               echo "🔨 Source files changed, building application..."
-              nice -n 10 NODE_OPTIONS="--max-old-space-size=512" npm run build
+              NODE_OPTIONS="--max-old-space-size=512" nice -n 10 npm run build
             elif [ ! -f "dist/server.js" ]; then
               echo "⚠️  dist/server.js not found, forcing build..."
-              nice -n 10 NODE_OPTIONS="--max-old-space-size=512" npm run build
+              NODE_OPTIONS="--max-old-space-size=512" nice -n 10 npm run build
             else
               # Check if verify-email route exists in built code (safety check)
               if ! grep -q "verify-email\|verifyEmail" dist/server.js 2>/dev/null; then
                 echo "⚠️  verify-email route not found in dist, forcing build..."
-                nice -n 10 NODE_OPTIONS="--max-old-space-size=512" npm run build
+                NODE_OPTIONS="--max-old-space-size=512" nice -n 10 npm run build
               elif git log --oneline -5 | grep -q "verify-email\|applications.*verify"; then
                 echo "🔨 Recent verify-email changes detected, forcing build..."
-                nice -n 10 NODE_OPTIONS="--max-old-space-size=512" npm run build
+                NODE_OPTIONS="--max-old-space-size=512" nice -n 10 npm run build
               else
                 echo "⏭️  Skipping build (no source changes detected)"
               fi
