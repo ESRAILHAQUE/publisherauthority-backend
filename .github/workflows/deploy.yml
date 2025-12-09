@@ -59,11 +59,15 @@ jobs:
               echo "⚠️  dist/server.js not found, forcing build..."
               nice -n 10 NODE_OPTIONS="--max-old-space-size=512" npm run build
             else
-              echo "⏭️  Skipping build (no source changes detected)"
-              # Force build if verify-email route files changed (safety check)
-              if git diff HEAD@{1} HEAD --name-only 2>/dev/null | grep -q "verify-email\|applications"; then
-                echo "🔨 Applications module changed, forcing build..."
+              # Check if verify-email route exists in built code (safety check)
+              if ! grep -q "verify-email\|verifyEmail" dist/server.js 2>/dev/null; then
+                echo "⚠️  verify-email route not found in dist, forcing build..."
                 nice -n 10 NODE_OPTIONS="--max-old-space-size=512" npm run build
+              elif git log --oneline -5 | grep -q "verify-email\|applications.*verify"; then
+                echo "🔨 Recent verify-email changes detected, forcing build..."
+                nice -n 10 NODE_OPTIONS="--max-old-space-size=512" npm run build
+              else
+                echo "⏭️  Skipping build (no source changes detected)"
               fi
             fi
 
