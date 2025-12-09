@@ -11,6 +11,7 @@ module.exports = {
       restart_delay: 5000, // Increased delay between restarts (5 seconds)
       kill_timeout: 10000, // Increased graceful shutdown timeout
       listen_timeout: 15000, // Increased wait time for app to listen
+      env_file: ".env", // Load environment variables from .env file
       env: {
         NODE_ENV: "production",
         PORT: 5003,
