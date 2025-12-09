@@ -1,7 +1,14 @@
 import dotenv from "dotenv";
+import path from "path";
 
 // Load environment variables
-dotenv.config();
+// Try multiple paths to ensure .env is loaded in all environments
+const envPath = path.resolve(process.cwd(), '.env');
+dotenv.config({ path: envPath });
+// Also try without explicit path (fallback)
+if (!process.env.EMAIL_HOST && !process.env.EMAIL_USER) {
+  dotenv.config();
+}
 
 /**
  * Environment Configuration Interface
