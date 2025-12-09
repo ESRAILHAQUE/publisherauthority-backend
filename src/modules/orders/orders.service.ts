@@ -4,7 +4,7 @@ import Website from '../websites/websites.model';
 import AppError from '../../utils/AppError';
 import logger from '../../utils/logger';
 import { autoUpdateAccountLevel } from '../../utils/accountLevel';
-import { sendOrderAssignmentEmail } from '../../utils/email';
+import { sendOrderAssignmentEmail, sendOrderCompletedEmail, sendOrderRevisionRequestedEmail, sendOrderCancelledEmail } from '../../utils/email';
 
 /**
  * Orders Service
@@ -137,7 +137,7 @@ class OrdersService {
     status: string,
     notes?: string
   ): Promise<IOrder> {
-    const order = await Order.findById(orderId);
+    const order = await Order.findById(orderId).populate('publisherId', 'email firstName lastName');
 
     if (!order) {
       throw new AppError('Order not found', 404);
@@ -158,13 +158,63 @@ class OrdersService {
 
       // Auto-update account level based on new completed orders count
       await autoUpdateAccountLevel(order.publisherId.toString());
+
+      // Send order completed email
+      try {
+        const publisher = order.publisherId as any;
+        if (publisher && publisher.email) {
+          await sendOrderCompletedEmail(
+            publisher.email,
+            `${publisher.firstName} ${publisher.lastName}`,
+            order.title,
+            order.orderId,
+            order.earnings
+          );
+        }
+      } catch (emailError: any) {
+        logger.error('Failed to send order completed email:', emailError);
+      }
     }
 
     if (status === 'revision-requested' && notes) {
       order.revisionNotes = notes;
+      
+      // Send revision requested email
+      try {
+        const publisher = order.publisherId as any;
+        if (publisher && publisher.email) {
+          await sendOrderRevisionRequestedEmail(
+            publisher.email,
+            `${publisher.firstName} ${publisher.lastName}`,
+            order.title,
+            order.orderId,
+            notes
+          );
+        }
+      } catch (emailError: any) {
+        logger.error('Failed to send revision requested email:', emailError);
+      }
     }
 
-    if (notes) {
+    if (status === 'cancelled') {
+      // Send order cancelled email
+      try {
+        const publisher = order.publisherId as any;
+        if (publisher && publisher.email) {
+          await sendOrderCancelledEmail(
+            publisher.email,
+            `${publisher.firstName} ${publisher.lastName}`,
+            order.title,
+            order.orderId,
+            notes
+          );
+        }
+      } catch (emailError: any) {
+        logger.error('Failed to send order cancelled email:', emailError);
+      }
+    }
+
+    if (notes && status !== 'revision-requested') {
       order.verificationNotes = notes;
     }
 

@@ -30,7 +30,7 @@ export interface IApplication extends Document {
     mimetype: string;
     uploadedAt: Date;
   }>;
-  quizAnswers: {
+  quizAnswers?: {
     question1?: string;
     question2?: string;
     question3?: string;
@@ -41,7 +41,10 @@ export interface IApplication extends Document {
     question8?: string;
     question9?: string;
   };
-  status: "pending" | "approved" | "rejected";
+  emailVerified: boolean;
+  emailVerificationToken?: string;
+  emailVerificationTokenExpires?: Date;
+  status: "email-verification-pending" | "pending" | "approved" | "rejected";
   reviewedAt?: Date;
   reviewedBy?: mongoose.Types.ObjectId;
   rejectionReason?: string;
@@ -154,13 +157,26 @@ const applicationSchema = new Schema<IApplication>(
       question8: String,
       question9: String,
     },
+    emailVerified: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    emailVerificationToken: {
+      type: String,
+      select: false,
+    },
+    emailVerificationTokenExpires: {
+      type: Date,
+      select: false,
+    },
     status: {
       type: String,
       enum: {
-        values: ["pending", "approved", "rejected"],
+        values: ["email-verification-pending", "pending", "approved", "rejected"],
         message: "Invalid application status",
       },
-      default: "pending",
+      default: "email-verification-pending",
       index: true,
     },
     reviewedAt: {

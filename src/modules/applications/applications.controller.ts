@@ -105,6 +105,13 @@ class ApplicationsController {
             // If not JSON, keep as is
           }
         }
+        if (typeof applicationData.completedProjectsUrls === 'string') {
+          try {
+            applicationData.completedProjectsUrls = JSON.parse(applicationData.completedProjectsUrls);
+          } catch (e) {
+            // If not JSON, keep as is
+          }
+        }
         if (typeof applicationData.quizAnswers === 'string') {
           try {
             applicationData.quizAnswers = JSON.parse(applicationData.quizAnswers);
@@ -145,6 +152,40 @@ class ApplicationsController {
       }
     });
   };
+
+  /**
+   * @route   GET /api/v1/applications/verify-email
+   * @desc    Verify email address using token
+   * @access  Public
+   */
+  verifyEmail = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const { token } = req.query;
+
+    if (!token || typeof token !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'Verification token is required',
+      });
+    }
+
+    try {
+      const application = await applicationsService.verifyEmail(token);
+      
+      return sendSuccess(res, 200, 'Email verified successfully. Your application is now under review.', {
+        application: {
+          id: application._id,
+          email: application.email,
+          emailVerified: application.emailVerified,
+          status: application.status,
+        },
+      });
+    } catch (error: any) {
+      return res.status(400).json({
+        success: false,
+        message: error.message || 'Invalid or expired verification token',
+      });
+    }
+  });
 }
 
 export default new ApplicationsController();

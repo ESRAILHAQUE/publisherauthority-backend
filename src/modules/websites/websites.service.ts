@@ -5,7 +5,7 @@ import logger from '../../utils/logger';
 import crypto from 'crypto';
 import { autoUpdateAccountLevel } from '../../utils/accountLevel';
 import { emitAdminNotification, emitUserNotification } from '../../config/socket';
-import { sendCounterOfferEmail, sendWebsiteApprovalEmail } from '../../utils/email';
+import { sendCounterOfferEmail, sendWebsiteApprovalEmail, sendWebsiteRejectionEmail, sendCounterOfferAcceptedEmail, sendCounterOfferRejectedEmail } from '../../utils/email';
 
 /**
  * Websites Service
@@ -301,19 +301,35 @@ class WebsitesService {
       });
       await autoUpdateAccountLevel(userId);
       
-      // Send website approval email
+      // Send counter offer accepted email
       try {
         const user = await User.findById(userId).select('firstName lastName email');
         if (user) {
-          await sendWebsiteApprovalEmail(
+          await sendCounterOfferAcceptedEmail(
+            user.email,
+            `${user.firstName} ${user.lastName}`,
+            website.url,
+            website.counterOffer.price
+          );
+        }
+      } catch (emailError: any) {
+        logger.error('Failed to send counter offer accepted email:', emailError);
+        // Don't fail the acceptance if email fails
+      }
+    } else {
+      // Send counter offer rejected email
+      try {
+        const user = await User.findById(userId).select('firstName lastName email');
+        if (user) {
+          await sendCounterOfferRejectedEmail(
             user.email,
             `${user.firstName} ${user.lastName}`,
             website.url
           );
         }
       } catch (emailError: any) {
-        logger.error('Failed to send website approval email:', emailError);
-        // Don't fail the acceptance if email fails
+        logger.error('Failed to send counter offer rejected email:', emailError);
+        // Don't fail the rejection if email fails
       }
     }
 
@@ -536,6 +552,22 @@ class WebsitesService {
           logger.error('Failed to send website approval email:', emailError);
           // Don't fail the status update if email fails
         }
+      }
+    } else if (status === 'rejected') {
+      // Send website rejection email
+      try {
+        const user = await User.findById(website.userId).select('firstName lastName email');
+        if (user) {
+          await sendWebsiteRejectionEmail(
+            user.email,
+            `${user.firstName} ${user.lastName}`,
+            website.url,
+            rejectionReason
+          );
+        }
+      } catch (emailError: any) {
+        logger.error('Failed to send website rejection email:', emailError);
+        // Don't fail the status update if email fails
       }
     } else if (wasActive && status !== 'active') {
       // If website was active but is being deactivated, decrease count

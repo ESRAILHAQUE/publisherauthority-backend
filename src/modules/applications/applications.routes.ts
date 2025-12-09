@@ -10,6 +10,7 @@ const router = Router();
 // Note: File upload is handled in the controller using multer
 router.get("/", applicationsController.getApplications); // Add GET route for checking applications
 router.get("/files/:filename", applicationsController.downloadFile); // File download route
+router.get("/verify-email", applicationsController.verifyEmail); // Email verification route
 router.post("/", applicationsController.submitApplication);
 
 export default router;

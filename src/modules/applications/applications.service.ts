@@ -2,6 +2,7 @@ import Application, { IApplication } from './applications.model';
 import User from '../auth/auth.model';
 import AppError from '../../utils/AppError';
 import logger from '../../utils/logger';
+import crypto from 'crypto';
 import { sendApplicationApprovalEmail, sendApplicationRejectionEmail, sendApplicationVerificationEmail } from '../../utils/email';
 
 /**
@@ -41,15 +42,27 @@ class ApplicationsService {
     // Application stores plain password temporarily for security
     // Password will be hashed by User model's pre-save middleware when user is created
 
-    const application = await Application.create(applicationData);
+    // Generate email verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(verificationToken).digest('hex');
+    const tokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    const application = await Application.create({
+      ...applicationData,
+      emailVerified: false,
+      emailVerificationToken: hashedToken,
+      emailVerificationTokenExpires: tokenExpires,
+      status: "email-verification-pending", // Application is pending email verification
+    });
 
     logger.info(`New application submitted: ${application.email}`);
     
-    // Send application verification email
+    // Send application verification email with verification link
     try {
       await sendApplicationVerificationEmail(
         application.email,
-        `${application.firstName} ${application.lastName}`
+        `${application.firstName} ${application.lastName}`,
+        verificationToken
       );
     } catch (emailError: any) {
       logger.error('Failed to send application verification email:', emailError);
@@ -111,6 +124,34 @@ class ApplicationsService {
   }
 
   /**
+   * Verify Email
+   */
+  async verifyEmail(token: string): Promise<IApplication> {
+    // Hash the token to compare with stored token
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    
+    // Find application with valid verification token
+    const application = await Application.findOne({
+      emailVerificationToken: hashedToken,
+      emailVerificationTokenExpires: { $gt: new Date() },
+    }).select('+emailVerificationToken +emailVerificationTokenExpires');
+
+    if (!application) {
+      throw new AppError('Invalid or expired verification token', 400);
+    }
+
+    // Mark email as verified and change status to pending (ready for admin review)
+    application.emailVerified = true;
+    application.emailVerificationToken = undefined;
+    application.emailVerificationTokenExpires = undefined;
+    application.status = 'pending'; // Now application is pending admin review
+    await application.save();
+
+    logger.info(`Email verified for application: ${application.email}. Application status changed to pending.`);
+    return application;
+  }
+
+  /**
    * Approve Application (Admin)
    */
   async approveApplication(
@@ -125,6 +166,11 @@ class ApplicationsService {
 
     if (application.status !== 'pending') {
       throw new AppError('Application has already been reviewed', 400);
+    }
+
+    // Check if email is verified
+    if (!application.emailVerified) {
+      throw new AppError('Email must be verified before approving application', 400);
     }
 
     // Create user account

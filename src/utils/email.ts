@@ -196,22 +196,33 @@ export async function sendPaymentNotificationEmail(
  */
 export async function sendApplicationVerificationEmail(
   userEmail: string,
-  userName: string
+  userName: string,
+  verificationToken: string
 ): Promise<void> {
+  const frontendUrl = config.FRONTEND_URL || 'https://publisherauthority.com';
+  const verificationUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
+
   const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #3F207F;">Application Received</h2>
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <h2 style="color: #3F207F;">Application Received - Verify Your Email</h2>
       <p>Hi ${userName},</p>
       <p>Thank you for submitting your publisher application to Publisher Authority!</p>
-      <p>We have received your application and our team will review it shortly. You will receive an email notification once your application has been reviewed.</p>
-      <p>In the meantime, if you have any questions, please don't hesitate to contact our support team.</p>
+      <p>To complete your application, please verify your email address by clicking the button below:</p>
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${verificationUrl}" style="background-color: #3F207F; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">Verify Email Address</a>
+      </div>
+      <p>Or copy and paste this link into your browser:</p>
+      <p style="word-break: break-all; color: #666;">${verificationUrl}</p>
+      <p><strong>Important:</strong> This verification link will expire in 24 hours.</p>
+      <p>Once your email is verified, our team will review your application. You will receive an email notification once your application has been reviewed.</p>
+      <p>If you did not submit this application, please ignore this email.</p>
       <p>Best regards,<br>The Publisher Authority Team</p>
     </div>
   `;
 
   await sendEmail({
     to: userEmail,
-    subject: 'Application Received - Publisher Authority',
+    subject: 'Verify Your Email - Publisher Authority Application',
     html,
   });
 }
@@ -268,6 +279,185 @@ export async function sendWebsiteApprovalEmail(
   await sendEmail({
     to: userEmail,
     subject: `Website Approved: ${websiteUrl}`,
+    html,
+  });
+}
+
+/**
+ * Send Website Rejection Email
+ */
+export async function sendWebsiteRejectionEmail(
+  userEmail: string,
+  userName: string,
+  websiteUrl: string,
+  reason?: string
+): Promise<void> {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #ef4444;">Website Not Approved</h2>
+      <p>Hi ${userName},</p>
+      <p>We regret to inform you that your website <strong>${websiteUrl}</strong> has not been approved at this time.</p>
+      ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ''}
+      <p>You can submit another website or contact our support team if you have any questions.</p>
+      <p><a href="${config.FRONTEND_URL}/dashboard/websites" style="background-color: #3F207F; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Your Websites</a></p>
+      <p>Best regards,<br>The Publisher Authority Team</p>
+    </div>
+  `;
+
+  await sendEmail({
+    to: userEmail,
+    subject: `Website Not Approved: ${websiteUrl}`,
+    html,
+  });
+}
+
+/**
+ * Send Order Completed Email
+ */
+export async function sendOrderCompletedEmail(
+  userEmail: string,
+  userName: string,
+  orderTitle: string,
+  orderId: string,
+  earnings: number
+): Promise<void> {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #2EE6B7;">Order Completed!</h2>
+      <p>Hi ${userName},</p>
+      <p>Great news! Your order has been completed and approved.</p>
+      <p><strong>Order:</strong> ${orderTitle}</p>
+      <p><strong>Order ID:</strong> ${orderId}</p>
+      <p><strong>Earnings:</strong> $${earnings.toFixed(2)}</p>
+      <p>The payment will be processed according to your payment schedule.</p>
+      <p><a href="${config.FRONTEND_URL}/dashboard/orders/${orderId}" style="background-color: #3F207F; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Order</a></p>
+      <p>Best regards,<br>The Publisher Authority Team</p>
+    </div>
+  `;
+
+  await sendEmail({
+    to: userEmail,
+    subject: `Order Completed: ${orderTitle}`,
+    html,
+  });
+}
+
+/**
+ * Send Order Revision Requested Email
+ */
+export async function sendOrderRevisionRequestedEmail(
+  userEmail: string,
+  userName: string,
+  orderTitle: string,
+  orderId: string,
+  revisionNotes: string
+): Promise<void> {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #ff8a3c;">Revision Requested</h2>
+      <p>Hi ${userName},</p>
+      <p>A revision has been requested for your order:</p>
+      <p><strong>Order:</strong> ${orderTitle}</p>
+      <p><strong>Order ID:</strong> ${orderId}</p>
+      <p><strong>Revision Notes:</strong></p>
+      <p style="background-color: #f3f4f6; padding: 15px; border-radius: 5px; margin: 10px 0;">${revisionNotes}</p>
+      <p>Please review the notes and submit a revised version.</p>
+      <p><a href="${config.FRONTEND_URL}/dashboard/orders/${orderId}" style="background-color: #3F207F; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Order</a></p>
+      <p>Best regards,<br>The Publisher Authority Team</p>
+    </div>
+  `;
+
+  await sendEmail({
+    to: userEmail,
+    subject: `Revision Requested: ${orderTitle}`,
+    html,
+  });
+}
+
+/**
+ * Send Order Cancelled Email
+ */
+export async function sendOrderCancelledEmail(
+  userEmail: string,
+  userName: string,
+  orderTitle: string,
+  orderId: string,
+  reason?: string
+): Promise<void> {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #ef4444;">Order Cancelled</h2>
+      <p>Hi ${userName},</p>
+      <p>We regret to inform you that your order has been cancelled.</p>
+      <p><strong>Order:</strong> ${orderTitle}</p>
+      <p><strong>Order ID:</strong> ${orderId}</p>
+      ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ''}
+      <p>If you have any questions, please contact our support team.</p>
+      <p><a href="${config.FRONTEND_URL}/dashboard/orders" style="background-color: #3F207F; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Orders</a></p>
+      <p>Best regards,<br>The Publisher Authority Team</p>
+    </div>
+  `;
+
+  await sendEmail({
+    to: userEmail,
+    subject: `Order Cancelled: ${orderTitle}`,
+    html,
+  });
+}
+
+/**
+ * Send Counter Offer Accepted Email
+ */
+export async function sendCounterOfferAcceptedEmail(
+  userEmail: string,
+  userName: string,
+  websiteUrl: string,
+  price: number
+): Promise<void> {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #2EE6B7;">Counter Offer Accepted</h2>
+      <p>Hi ${userName},</p>
+      <p>Great news! Your counter offer has been accepted.</p>
+      <p><strong>Website:</strong> ${websiteUrl}</p>
+      <p><strong>Accepted Price:</strong> $${price.toFixed(2)}</p>
+      <p>Your website is now active and ready to receive orders.</p>
+      <p><a href="${config.FRONTEND_URL}/dashboard/websites" style="background-color: #3F207F; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Website</a></p>
+      <p>Best regards,<br>The Publisher Authority Team</p>
+    </div>
+  `;
+
+  await sendEmail({
+    to: userEmail,
+    subject: `Counter Offer Accepted: ${websiteUrl}`,
+    html,
+  });
+}
+
+/**
+ * Send Counter Offer Rejected Email
+ */
+export async function sendCounterOfferRejectedEmail(
+  userEmail: string,
+  userName: string,
+  websiteUrl: string,
+  reason?: string
+): Promise<void> {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #ef4444;">Counter Offer Not Accepted</h2>
+      <p>Hi ${userName},</p>
+      <p>We regret to inform you that your counter offer for <strong>${websiteUrl}</strong> has not been accepted.</p>
+      ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ''}
+      <p>You can submit a new counter offer or contact our support team if you have any questions.</p>
+      <p><a href="${config.FRONTEND_URL}/dashboard/websites" style="background-color: #3F207F; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Website</a></p>
+      <p>Best regards,<br>The Publisher Authority Team</p>
+    </div>
+  `;
+
+  await sendEmail({
+    to: userEmail,
+    subject: `Counter Offer Not Accepted: ${websiteUrl}`,
     html,
   });
 }
