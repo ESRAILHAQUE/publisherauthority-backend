@@ -57,9 +57,11 @@ class ApplicationsService {
         `${application.firstName} ${application.lastName}`,
         verificationToken
       );
+      logger.info(`Verification email sent successfully to ${application.email}`);
     } catch (emailError: any) {
-      logger.error('Failed to send application verification email:', emailError);
-      // Don't fail the application submission if email fails
+      logger.error(`Failed to send application verification email to ${application.email}:`, emailError);
+      logger.error(`Email error details: ${emailError.message}`);
+      // Don't fail the application submission if email fails, but log the error
     }
     
     return application;

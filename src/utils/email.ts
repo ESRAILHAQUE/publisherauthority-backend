@@ -36,8 +36,14 @@ export async function sendEmail(options: EmailOptions): Promise<void> {
   try {
     // Validate email configuration
     if (!config.EMAIL_HOST || !config.EMAIL_USER || !config.EMAIL_PASSWORD) {
-      logger.warn("Email configuration is incomplete. Skipping email send.");
-      return;
+      const missing = [];
+      if (!config.EMAIL_HOST) missing.push('EMAIL_HOST');
+      if (!config.EMAIL_USER) missing.push('EMAIL_USER');
+      if (!config.EMAIL_PASSWORD) missing.push('EMAIL_PASSWORD');
+      
+      logger.error(`Email configuration is incomplete. Missing: ${missing.join(', ')}. Email not sent to ${options.to}`);
+      logger.error(`Please set email environment variables in .env file or ecosystem.config.js`);
+      throw new Error(`Email configuration incomplete: Missing ${missing.join(', ')}`);
     }
 
     const transporter = createTransporter();
