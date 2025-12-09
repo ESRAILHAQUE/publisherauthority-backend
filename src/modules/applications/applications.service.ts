@@ -30,6 +30,13 @@ class ApplicationsService {
       );
     }
 
+    // Ensure completedProjectsUrls is an array and filter out empty values
+    if (applicationData.completedProjectsUrls) {
+      applicationData.completedProjectsUrls = applicationData.completedProjectsUrls.filter(
+        (url: string) => url && url.trim() !== ''
+      );
+    }
+
     // Don't hash password here - it will be hashed when User is created
     // Application stores plain password temporarily for security
     // Password will be hashed by User model's pre-save middleware when user is created

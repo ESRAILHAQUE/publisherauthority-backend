@@ -14,6 +14,8 @@ export interface IApplication extends Document {
   hearAboutUs?: string;
   guestPostExperience?: string;
   guestPostUrls: string[];
+  websiteNiche?: string;
+  completedProjectsUrls?: string[];
   referralInfo?: {
     name?: string;
     email?: string;
@@ -103,6 +105,21 @@ const applicationSchema = new Schema<IApplication>(
           return validUrls.length >= 3;
         },
         message: "At least 3 guest post URLs are required",
+      },
+    },
+    websiteNiche: {
+      type: String,
+      trim: true,
+    },
+    completedProjectsUrls: {
+      type: [String],
+      validate: {
+        validator: function (v: string[]) {
+          // Filter out empty strings and null values
+          const validUrls = (v || []).filter((url) => url && url.trim() !== "");
+          return validUrls.length >= 3;
+        },
+        message: "At least 3 completed project URLs are required",
       },
     },
     referralInfo: {
