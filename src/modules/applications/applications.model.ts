@@ -15,12 +15,6 @@ export interface IApplication extends Document {
   guestPostExperience?: string;
   guestPostUrls: string[];
   websiteNiche?: string;
-  completedProjectsUrls?: string[];
-  referralInfo?: {
-    name?: string;
-    email?: string;
-    phone?: string;
-  };
   csvData?: any[];
   files?: Array<{
     filename: string;
@@ -113,22 +107,6 @@ const applicationSchema = new Schema<IApplication>(
     websiteNiche: {
       type: String,
       trim: true,
-    },
-    completedProjectsUrls: {
-      type: [String],
-      validate: {
-        validator: function (v: string[]) {
-          // Filter out empty strings and null values
-          const validUrls = (v || []).filter((url) => url && url.trim() !== "");
-          return validUrls.length >= 3;
-        },
-        message: "At least 3 completed project URLs are required",
-      },
-    },
-    referralInfo: {
-      name: String,
-      email: String,
-      phone: String,
     },
     csvData: {
       type: Schema.Types.Mixed,

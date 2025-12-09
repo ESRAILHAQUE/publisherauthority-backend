@@ -105,23 +105,9 @@ class ApplicationsController {
             // If not JSON, keep as is
           }
         }
-        if (typeof applicationData.completedProjectsUrls === 'string') {
-          try {
-            applicationData.completedProjectsUrls = JSON.parse(applicationData.completedProjectsUrls);
-          } catch (e) {
-            // If not JSON, keep as is
-          }
-        }
         if (typeof applicationData.quizAnswers === 'string') {
           try {
             applicationData.quizAnswers = JSON.parse(applicationData.quizAnswers);
-          } catch (e) {
-            // If not JSON, keep as is
-          }
-        }
-        if (typeof applicationData.referralInfo === 'string') {
-          try {
-            applicationData.referralInfo = JSON.parse(applicationData.referralInfo);
           } catch (e) {
             // If not JSON, keep as is
           }
