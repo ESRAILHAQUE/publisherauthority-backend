@@ -51,16 +51,20 @@ jobs:
             fi
 
             # Check if source files changed (only build if needed)
-            if git diff HEAD@{1} HEAD --name-only | grep -q "\.ts$\|\.tsx$\|tsconfig.json"; then
+            # Use git diff with previous commit, or force build if diff fails
+            if git diff HEAD@{1} HEAD --name-only 2>/dev/null | grep -q "\.ts$\|\.tsx$\|tsconfig.json\|applications\.routes\|applications\.controller\|applications\.service\|applications\.model"; then
               echo "🔨 Source files changed, building application..."
               nice -n 10 NODE_OPTIONS="--max-old-space-size=512" npm run build
-            else
-              echo "⏭️  Skipping build (no source changes)"
-            fi
-
-            if [ ! -f "dist/server.js" ]; then
+            elif [ ! -f "dist/server.js" ]; then
               echo "⚠️  dist/server.js not found, forcing build..."
               nice -n 10 NODE_OPTIONS="--max-old-space-size=512" npm run build
+            else
+              echo "⏭️  Skipping build (no source changes detected)"
+              # Force build if verify-email route files changed (safety check)
+              if git diff HEAD@{1} HEAD --name-only 2>/dev/null | grep -q "verify-email\|applications"; then
+                echo "🔨 Applications module changed, forcing build..."
+                nice -n 10 NODE_OPTIONS="--max-old-space-size=512" npm run build
+              fi
             fi
 
             echo "🔄 Restarting backend..."
