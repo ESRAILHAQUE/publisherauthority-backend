@@ -35,6 +35,8 @@ class PaymentsService {
 
     const total = await Payment.countDocuments(query);
 
+    console.log('User Payments Query:', query);
+
     return {
       payments,
       total,
@@ -198,7 +200,7 @@ class PaymentsService {
     await payment.save();
 
     logger.info(`Payment marked as paid: ${payment.invoiceNumber}`);
-    
+
     // Send payment notification email
     try {
       const user = await User.findById(payment.userId).select('firstName lastName email');
@@ -214,7 +216,7 @@ class PaymentsService {
       logger.error('Failed to send payment notification email:', emailError);
       // Don't fail payment if email fails
     }
-    
+
     return payment;
   }
 
@@ -256,9 +258,9 @@ class PaymentsService {
   private getNextPaymentDate(): Date {
     const now = new Date();
     const day = now.getDate();
-    
+
     let paymentDate: Date;
-    
+
     if (day < 1) {
       paymentDate = new Date(now.getFullYear(), now.getMonth(), 1);
     } else if (day < 15) {

@@ -29,6 +29,8 @@ class PaymentsController {
       Number(limit)
     );
 
+    console.log('Payments result:', result);
+
     sendSuccess(res, 200, 'Payments retrieved successfully', result);
   });
 

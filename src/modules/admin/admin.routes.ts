@@ -38,6 +38,8 @@ router.put('/orders/:id/status', adminController.updateOrderStatus);
 
 // Payments Management
 router.get('/payments', adminController.getAllPayments);
+router.get('/payments/user/:userId', adminController.getUserPayments);
+router.get('/payments/user/:userId/stats', adminController.getUserPaymentStats);
 router.post('/payments/generate', adminController.generateInvoice);
 router.put('/payments/:id/process', adminController.processPayment);
 router.put('/payments/:id/mark-paid', adminController.markPaymentAsPaid);

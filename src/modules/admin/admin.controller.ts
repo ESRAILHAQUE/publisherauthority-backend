@@ -311,6 +311,45 @@ class AdminController {
   );
 
   /**
+   * @route   GET /api/v1/admin/payments/user/:userId
+   * @desc    Get payments for a specific user
+   * @access  Private/Admin
+   */
+  getUserPayments = asyncHandler(
+    async (req: AuthRequest, res: Response, _next: NextFunction) => {
+      const { userId } = req.params;
+      const { status, page = 1, limit = 20 } = req.query;
+
+      const filters: any = {};
+      if (status) filters.status = status;
+
+      const result = await paymentsService.getUserPayments(
+        userId,
+        filters,
+        Number(page),
+        Number(limit)
+      );
+
+      sendSuccess(res, 200, "User payments retrieved successfully", result);
+    }
+  );
+
+  /**
+   * @route   GET /api/v1/admin/payments/user/:userId/stats
+   * @desc    Get payment statistics for a specific user
+   * @access  Private/Admin
+   */
+  getUserPaymentStats = asyncHandler(
+    async (req: AuthRequest, res: Response, _next: NextFunction) => {
+      const { userId } = req.params;
+
+      const stats = await paymentsService.getPaymentStats(userId);
+
+      sendSuccess(res, 200, "User payment statistics retrieved successfully", stats);
+    }
+  );
+
+  /**
    * @route   POST /api/v1/admin/payments/generate
    * @desc    Generate invoice
    * @access  Private/Admin
