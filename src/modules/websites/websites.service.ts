@@ -159,6 +159,59 @@ class WebsitesService {
   }
 
   /**
+   * Submit Website Verification (Publisher)
+   */
+  async submitVerification(websiteId: string, userId: string, method: 'tag' | 'article', articleUrl?: string): Promise<IWebsite> {
+    logger.info(`Submitting verification for website ${websiteId} by user ${userId}, method: ${method}`);
+    
+    // First check if website exists
+    const website = await Website.findById(websiteId);
+
+    if (!website) {
+      logger.error(`Website not found: ${websiteId}`);
+      throw new AppError('Website not found', 404);
+    }
+
+    // Check if website belongs to the user
+    const websiteUserId = website.userId.toString();
+    if (websiteUserId !== userId) {
+      logger.error(`Website ${websiteId} does not belong to user ${userId}. Website belongs to ${websiteUserId}`);
+      throw new AppError('Website not found', 404);
+    }
+
+    if (website.status === 'active') {
+      throw new AppError('Website is already verified', 400);
+    }
+
+    website.verificationMethod = method;
+    if (method === 'article' && articleUrl) {
+      website.verificationArticleUrl = articleUrl;
+    }
+    // Keep status as pending - admin will verify manually
+    await website.save();
+
+    // Emit notification to admin
+    try {
+      const user = await User.findById(userId).select('firstName lastName email');
+      emitAdminNotification('verification_submitted', {
+        websiteId: website._id.toString(),
+        url: website.url,
+        userId: userId,
+        userName: user ? `${user.firstName} ${user.lastName}` : 'Unknown',
+        userEmail: user?.email || 'Unknown',
+        verificationMethod: method,
+        articleUrl: articleUrl || null,
+      });
+    } catch (error) {
+      logger.error('Failed to emit verification notification:', error);
+      // Don't fail verification if notification fails
+    }
+
+    logger.info(`Website verification submitted: ${website.url} by user ${userId}`);
+    return website;
+  }
+
+  /**
    * Verify Website (Admin)
    */
   async verifyWebsite(websiteId: string, method: 'tag' | 'article'): Promise<IWebsite> {

@@ -136,6 +136,43 @@ class WebsitesController {
 
     sendSuccess(res, 200, 'Counter offer sent successfully', { website });
   });
+
+  /**
+   * @route   POST /api/v1/websites/:id/verify/tag
+   * @desc    Submit tag verification
+   * @access  Private (Publisher)
+   */
+  submitTagVerification = asyncHandler(async (req: AuthRequest, res: Response, _next: NextFunction) => {
+    const userId = req.user!.id;
+    const { id } = req.params;
+
+    const website = await websitesService.submitVerification(id, userId, 'tag');
+
+    sendSuccess(res, 200, 'Verification submitted successfully. Status is pending and admin will manually check.', { website });
+  });
+
+  /**
+   * @route   POST /api/v1/websites/:id/verify/article
+   * @desc    Submit article verification
+   * @access  Private (Publisher)
+   */
+  submitArticleVerification = asyncHandler(async (req: AuthRequest, res: Response, _next: NextFunction) => {
+    const userId = req.user!.id;
+    const { id } = req.params;
+    const { articleUrl } = req.body;
+
+    if (!articleUrl || typeof articleUrl !== 'string' || articleUrl.trim() === '') {
+      res.status(400).json({
+        success: false,
+        message: 'Article URL is required',
+      });
+      return;
+    }
+
+    const website = await websitesService.submitVerification(id, userId, 'article', articleUrl.trim());
+
+    sendSuccess(res, 200, 'Verification submitted successfully. Status is pending and admin will manually check.', { website });
+  });
 }
 
 export default new WebsitesController();

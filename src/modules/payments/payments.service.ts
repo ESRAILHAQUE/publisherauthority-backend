@@ -69,17 +69,23 @@ class PaymentsService {
    * Update Payment Settings
    */
   async updatePaymentSettings(userId: string, paypalEmail: string): Promise<any> {
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(paypalEmail.trim())) {
+      throw new AppError('Invalid email format', 400);
+    }
+
     const user = await User.findByIdAndUpdate(
       userId,
-      { paypalEmail },
+      { paypalEmail: paypalEmail.trim().toLowerCase() },
       { new: true, runValidators: true }
-    ).select('paypalEmail');
+    ).select('paypalEmail firstName lastName email');
 
     if (!user) {
       throw new AppError('User not found', 404);
     }
 
-    logger.info(`Payment settings updated for user: ${userId}`);
+    logger.info(`Payment settings updated for user: ${userId}, email: ${user.paypalEmail}`);
     return user;
   }
 

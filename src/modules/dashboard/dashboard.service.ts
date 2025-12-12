@@ -24,6 +24,7 @@ class DashboardService {
       totalWebsites,
       activeWebsites,
       pendingWebsites,
+      counterOfferWebsites,
       totalOrders,
       pendingOrders,
       readyToPostOrders,
@@ -35,6 +36,7 @@ class DashboardService {
       Website.countDocuments({ userId }),
       Website.countDocuments({ userId, status: 'active' }),
       Website.countDocuments({ userId, status: 'pending' }),
+      Website.countDocuments({ userId, status: 'counter-offer' }),
       Order.countDocuments({ publisherId: userId }),
       Order.countDocuments({ publisherId: userId, status: 'pending' }),
       Order.countDocuments({ publisherId: userId, status: 'ready-to-post' }),
@@ -50,11 +52,12 @@ class DashboardService {
       ]),
     ]);
 
-    // Get recent orders
+    // Get recent orders with all necessary fields
     const recentOrders = await Order.find({ publisherId: userId })
-      .populate('websiteId', 'url')
+      .populate('websiteId', 'url domainAuthority monthlyTraffic niche')
+      .select('orderId title status deadline earnings submittedUrl createdAt')
       .sort({ createdAt: -1 })
-      .limit(5)
+      .limit(10)
       .lean();
 
     // Get upcoming deadlines
@@ -84,12 +87,13 @@ class DashboardService {
         profileImage: user.profileImage,
       },
       stats: {
-        totalEarnings: totalEarnings[0]?.total || 0,
+        totalEarnings: totalEarnings[0]?.total || user.totalEarnings || 0,
         pendingPayments: pendingPayments[0]?.total || 0,
         websites: {
           total: totalWebsites,
           active: activeWebsites,
           pending: pendingWebsites,
+          counterOffers: counterOfferWebsites,
         },
         orders: {
           total: totalOrders,
@@ -97,7 +101,9 @@ class DashboardService {
           readyToPost: readyToPostOrders,
           verifying: verifyingOrders,
           completed: completedOrders,
+          counterOffers: counterOfferWebsites,
         },
+        counterOffers: counterOfferWebsites,
       },
       levelProgress,
       recentOrders,
