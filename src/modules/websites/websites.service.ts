@@ -164,19 +164,25 @@ class WebsitesService {
   async submitVerification(websiteId: string, userId: string, method: 'tag' | 'article', articleUrl?: string): Promise<IWebsite> {
     logger.info(`Submitting verification for website ${websiteId} by user ${userId}, method: ${method}`);
     
+    // Validate websiteId format
+    if (!websiteId || typeof websiteId !== 'string' || websiteId.trim() === '') {
+      logger.error(`Invalid website ID provided: ${websiteId}`);
+      throw new AppError('Invalid website ID', 400);
+    }
+
     // First check if website exists
-    const website = await Website.findById(websiteId);
+    const website = await Website.findById(websiteId.trim());
 
     if (!website) {
       logger.error(`Website not found: ${websiteId}`);
-      throw new AppError('Website not found', 404);
+      throw new AppError('Website not found. Please refresh the page and try again.', 404);
     }
 
     // Check if website belongs to the user
     const websiteUserId = website.userId.toString();
     if (websiteUserId !== userId) {
       logger.error(`Website ${websiteId} does not belong to user ${userId}. Website belongs to ${websiteUserId}`);
-      throw new AppError('Website not found', 404);
+      throw new AppError('This website does not belong to you. Please refresh the page.', 403);
     }
 
     if (website.status === 'active') {
