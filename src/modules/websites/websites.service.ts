@@ -147,13 +147,13 @@ class WebsitesService {
       throw new AppError('Cannot delete active website', 400);
     }
 
-    website.status = 'deleted';
-    await website.save();
-
-    // Update user's active websites count
-    await User.findByIdAndUpdate(userId, {
-      $inc: { activeWebsites: -1 },
-    });
+    // Use findByIdAndUpdate to avoid validation issues when just updating status
+    // runValidators: false prevents validation errors when only changing status
+    await Website.findByIdAndUpdate(
+      websiteId,
+      { status: 'deleted' },
+      { runValidators: false, new: true }
+    );
 
     logger.info(`Website deleted: ${website.url}`);
   }
