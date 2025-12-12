@@ -55,9 +55,9 @@ class PaymentsController {
    */
   updatePaymentSettings = asyncHandler(async (req: AuthRequest, res: Response, _next: NextFunction) => {
     const userId = req.user!.id;
-    const { paypalEmail } = req.body;
+    const { paypalEmail, paymentMethod } = req.body;
 
-    const user = await paymentsService.updatePaymentSettings(userId, paypalEmail);
+    const user = await paymentsService.updatePaymentSettings(userId, paypalEmail, paymentMethod);
 
     sendSuccess(res, 200, 'Payment settings updated successfully', { user });
   });

@@ -90,6 +90,31 @@ export async function sendWelcomeEmail(
 }
 
 /**
+ * Send Application Welcome Email (After Email Verification)
+ */
+export async function sendApplicationWelcomeEmail(
+  userEmail: string,
+  userName: string
+): Promise<void> {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <h2 style="color: #3F207F;">Welcome to PublisherAuthority!</h2>
+      <p>Hello ${userName},</p>
+      <p>Thank you for your interest in joining PublisherAuthority!</p>
+      <p>We are currently reviewing your information and will update you within 7 days. Once approved, you'll be able to start adding sites for review.</p>
+      <p>We appreciate your patience!</p>
+      <p>Best regards,<br>The PublisherAuthority Team</p>
+    </div>
+  `;
+
+  await sendEmail({
+    to: userEmail,
+    subject: "Welcome to PublisherAuthority!",
+    html,
+  });
+}
+
+/**
  * Send Application Approval Email
  */
 export async function sendApplicationApprovalEmail(

@@ -3,7 +3,7 @@ import User from '../auth/auth.model';
 import AppError from '../../utils/AppError';
 import logger from '../../utils/logger';
 import crypto from 'crypto';
-import { sendApplicationApprovalEmail, sendApplicationRejectionEmail, sendApplicationVerificationEmail } from '../../utils/email';
+import { sendApplicationApprovalEmail, sendApplicationRejectionEmail, sendApplicationVerificationEmail, sendApplicationWelcomeEmail } from '../../utils/email';
 
 /**
  * Applications Service
@@ -143,6 +143,19 @@ class ApplicationsService {
     await application.save();
 
     logger.info(`Email verified for application: ${application.email}. Application status changed to pending.`);
+    
+    // Send welcome email after verification
+    try {
+      await sendApplicationWelcomeEmail(
+        application.email,
+        `${application.firstName} ${application.lastName}`
+      );
+      logger.info(`Welcome email sent successfully to ${application.email}`);
+    } catch (emailError: any) {
+      logger.error(`Failed to send welcome email to ${application.email}:`, emailError);
+      // Don't fail the verification if email fails
+    }
+    
     return application;
   }
 

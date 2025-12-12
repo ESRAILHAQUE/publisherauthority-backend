@@ -30,6 +30,10 @@ class DashboardService {
       readyToPostOrders,
       verifyingOrders,
       completedOrders,
+      pendingEarnings,
+      readyToPostEarnings,
+      verifyingEarnings,
+      completedEarnings,
       totalEarnings,
       pendingPayments,
     ] = await Promise.all([
@@ -42,6 +46,22 @@ class DashboardService {
       Order.countDocuments({ publisherId: userId, status: 'ready-to-post' }),
       Order.countDocuments({ publisherId: userId, status: 'verifying' }),
       Order.countDocuments({ publisherId: userId, status: 'completed' }),
+      Order.aggregate([
+        { $match: { publisherId: user._id, status: 'pending' } },
+        { $group: { _id: null, total: { $sum: '$earnings' } } },
+      ]),
+      Order.aggregate([
+        { $match: { publisherId: user._id, status: 'ready-to-post' } },
+        { $group: { _id: null, total: { $sum: '$earnings' } } },
+      ]),
+      Order.aggregate([
+        { $match: { publisherId: user._id, status: 'verifying' } },
+        { $group: { _id: null, total: { $sum: '$earnings' } } },
+      ]),
+      Order.aggregate([
+        { $match: { publisherId: user._id, status: 'completed' } },
+        { $group: { _id: null, total: { $sum: '$earnings' } } },
+      ]),
       Payment.aggregate([
         { $match: { userId: user._id, status: 'paid' } },
         { $group: { _id: null, total: { $sum: '$amount' } } },
@@ -89,6 +109,10 @@ class DashboardService {
       stats: {
         totalEarnings: totalEarnings[0]?.total || user.totalEarnings || 0,
         pendingPayments: pendingPayments[0]?.total || 0,
+        pendingEarnings: pendingEarnings[0]?.total || 0,
+        readyToPostEarnings: readyToPostEarnings[0]?.total || 0,
+        verifyingEarnings: verifyingEarnings[0]?.total || 0,
+        completedEarnings: completedEarnings[0]?.total || 0,
         websites: {
           total: totalWebsites,
           active: activeWebsites,

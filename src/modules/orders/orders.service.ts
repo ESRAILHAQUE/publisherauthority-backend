@@ -25,10 +25,47 @@ class OrdersService {
       throw new AppError('Website not found or not active', 404);
     }
 
-    const order = await Order.create({
-      ...orderData,
-      status: 'ready-to-post',
+    // Remove orderId from orderData if present (it will be auto-generated)
+    const { orderId, ...orderDataWithoutId } = orderData;
+    
+    // Generate orderId before creating
+    const count = await Order.countDocuments();
+    const generatedOrderId = `ORD-${Date.now()}-${count + 1}`;
+    
+    // Ensure deadline is a Date object if it's a string
+    let deadline: Date;
+    if (orderDataWithoutId.deadline instanceof Date) {
+      deadline = orderDataWithoutId.deadline;
+    } else if (typeof orderDataWithoutId.deadline === 'string') {
+      deadline = new Date(orderDataWithoutId.deadline);
+      if (isNaN(deadline.getTime())) {
+        throw new AppError('Invalid deadline date format', 400);
+      }
+    } else {
+      throw new AppError('Deadline is required', 400);
+    }
+    
+    const orderDataToCreate = {
+      ...orderDataWithoutId,
+      orderId: generatedOrderId,
+      deadline,
+      status: 'ready-to-post' as const,
+    };
+    
+    logger.info('Creating order with data:', {
+      orderId: generatedOrderId,
+      title: orderDataToCreate.title,
+      websiteId: orderDataToCreate.websiteId,
+      publisherId: orderDataToCreate.publisherId,
+      anchorText: orderDataToCreate.anchorText,
+      targetUrl: orderDataToCreate.targetUrl,
+      deadline: deadline.toISOString(),
+      earnings: orderDataToCreate.earnings,
+      hasContent: !!orderDataToCreate.content,
+      contentLength: orderDataToCreate.content?.length || 0,
     });
+    
+    const order = await Order.create(orderDataToCreate);
 
     logger.info(`Order created: ${order.orderId} for publisher ${publisher.email}`);
     

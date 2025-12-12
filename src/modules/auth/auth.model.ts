@@ -18,6 +18,7 @@ export interface IUser extends Document {
   isVerified: boolean;
   isActive: boolean;
   paypalEmail?: string;
+  paymentMethod?: string;
   applicationStatus: 'pending' | 'approved' | 'rejected';
   passwordResetToken?: string;
   passwordResetExpires?: Date;
@@ -107,6 +108,12 @@ const userSchema = new Schema<IUser>(
     paypalEmail: {
       type: String,
       lowercase: true,
+      trim: true,
+    },
+    paymentMethod: {
+      type: String,
+      enum: ['PayPal', 'Bank Transfer', 'Wise', 'Payoneer', 'Other'],
+      default: 'PayPal',
       trim: true,
     },
     applicationStatus: {

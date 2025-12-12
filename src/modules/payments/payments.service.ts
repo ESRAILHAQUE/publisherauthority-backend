@@ -55,7 +55,7 @@ class PaymentsService {
     }
 
     const payment = await Payment.findOne(query)
-      .populate('userId', 'firstName lastName email paypalEmail')
+      .populate('userId', 'firstName lastName email paypalEmail paymentMethod')
       .populate('orderIds', 'orderId title earnings');
 
     if (!payment) {
@@ -68,24 +68,35 @@ class PaymentsService {
   /**
    * Update Payment Settings
    */
-  async updatePaymentSettings(userId: string, paypalEmail: string): Promise<any> {
+  async updatePaymentSettings(userId: string, paypalEmail: string, paymentMethod?: string): Promise<any> {
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(paypalEmail.trim())) {
       throw new AppError('Invalid email format', 400);
     }
 
+    // Validate payment method if provided
+    const validPaymentMethods = ['PayPal', 'Bank Transfer', 'Wise', 'Payoneer', 'Other'];
+    if (paymentMethod && !validPaymentMethods.includes(paymentMethod)) {
+      throw new AppError('Invalid payment method', 400);
+    }
+
+    const updateData: any = { paypalEmail: paypalEmail.trim().toLowerCase() };
+    if (paymentMethod) {
+      updateData.paymentMethod = paymentMethod;
+    }
+
     const user = await User.findByIdAndUpdate(
       userId,
-      { paypalEmail: paypalEmail.trim().toLowerCase() },
+      updateData,
       { new: true, runValidators: true }
-    ).select('paypalEmail firstName lastName email');
+    ).select('paypalEmail paymentMethod firstName lastName email');
 
     if (!user) {
       throw new AppError('User not found', 404);
     }
 
-    logger.info(`Payment settings updated for user: ${userId}, email: ${user.paypalEmail}`);
+    logger.info(`Payment settings updated for user: ${userId}, email: ${user.paypalEmail}, method: ${user.paymentMethod || 'PayPal'}`);
     return user;
   }
 
@@ -146,8 +157,8 @@ class PaymentsService {
     // Calculate total amount
     const totalAmount = orders.reduce((sum, order) => sum + order.earnings, 0);
 
-    // Get user's PayPal email
-    const user = await User.findById(userId).select('paypalEmail');
+    // Get user's PayPal email and payment method
+    const user = await User.findById(userId).select('paypalEmail paymentMethod');
     if (!user) {
       throw new AppError('User not found', 404);
     }
@@ -158,7 +169,7 @@ class PaymentsService {
       orderIds,
       amount: totalAmount,
       currency: 'USD',
-      paymentMethod: 'PayPal',
+      paymentMethod: user.paymentMethod || 'PayPal',
       paypalEmail: user.paypalEmail,
       invoiceDate: new Date(),
       dueDate: this.getNextPaymentDate(),
@@ -242,7 +253,7 @@ class PaymentsService {
     const skip = (page - 1) * limit;
 
     const payments = await Payment.find(filters)
-      .populate('userId', 'firstName lastName email paypalEmail accountLevel')
+      .populate('userId', 'firstName lastName email paypalEmail paymentMethod accountLevel')
       .populate('orderIds', 'orderId title')
       .sort({ invoiceDate: -1 })
       .skip(skip)

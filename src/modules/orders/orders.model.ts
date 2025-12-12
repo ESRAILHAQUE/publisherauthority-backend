@@ -33,9 +33,10 @@ const orderSchema = new Schema<IOrder>(
   {
     orderId: {
       type: String,
-      required: true,
+      required: false, // Auto-generated in pre-validate hook
       unique: true,
       index: true,
+      default: undefined, // Explicitly set to undefined so pre-validate can set it
     },
     publisherId: {
       type: Schema.Types.ObjectId,
@@ -119,8 +120,8 @@ const orderSchema = new Schema<IOrder>(
   }
 );
 
-// Auto-generate orderId
-orderSchema.pre('save', async function (next) {
+// Auto-generate orderId before validation
+orderSchema.pre('validate', async function (next) {
   if (!this.orderId) {
     const count = await mongoose.model('Order').countDocuments();
     this.orderId = `ORD-${Date.now()}-${count + 1}`;

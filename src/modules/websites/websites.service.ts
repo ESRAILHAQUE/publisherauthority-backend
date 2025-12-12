@@ -274,7 +274,7 @@ class WebsitesService {
       throw new AppError('Website not found', 404);
     }
 
-    if (website.status !== 'pending' && website.status !== 'counter-offer') {
+    if (!['pending', 'counter-offer', 'active'].includes(website.status)) {
       throw new AppError('Cannot send counter offer for website in current status', 400);
     }
 
@@ -300,14 +300,18 @@ class WebsitesService {
         notes: counterOfferData.notes,
         terms: counterOfferData.terms,
       });
+      logger.info(`Counter offer notification emitted to user ${website.userId.toString()}`);
     } catch (error) {
       logger.error('Failed to emit counter offer notification:', error);
     }
     
-    // Send counter offer email
+    // Send counter offer email - ALWAYS send email every time admin sends counter offer
     try {
       const user = await User.findById(website.userId).select('firstName lastName email');
-      if (user) {
+      if (user && user.email) {
+        logger.info(`[COUNTER OFFER EMAIL] Attempting to send counter offer email to ${user.email} for website ${website.url}, Price: $${counterOfferData.price}`);
+        
+        // Send email - this will be called every time without any conditions
         await sendCounterOfferEmail(
           user.email,
           `${user.firstName} ${user.lastName}`,
@@ -315,10 +319,22 @@ class WebsitesService {
           counterOfferData.price,
           counterOfferData.notes
         );
+        
+        logger.info(`[COUNTER OFFER EMAIL] ✅ Email sent successfully to ${user.email} for website ${website.url}`);
+      } else {
+        logger.error(`[COUNTER OFFER EMAIL] ❌ Cannot send email: User not found or email missing. Website: ${website.url}, UserId: ${website.userId}`);
       }
     } catch (emailError: any) {
-      logger.error('Failed to send counter offer email:', emailError);
-      // Don't fail the counter offer if email fails
+      logger.error('[COUNTER OFFER EMAIL] ❌ Failed to send counter offer email:', {
+        error: emailError.message || emailError,
+        stack: emailError.stack,
+        websiteId: website._id.toString(),
+        websiteUrl: website.url,
+        userId: website.userId.toString(),
+        price: counterOfferData.price,
+      });
+      // Don't fail the counter offer if email fails, but log the error for admin to see
+      // The counter offer is still saved even if email fails
     }
     
     return website;
@@ -430,8 +446,8 @@ class WebsitesService {
       throw new AppError('Website not found', 404);
     }
 
-    if (website.status !== 'counter-offer') {
-      throw new AppError('Can only send counter offer when website is in counter-offer status', 400);
+    if (!['counter-offer', 'active'].includes(website.status)) {
+      throw new AppError('Can only send counter offer when website is in counter-offer or active status', 400);
     }
 
     // Allow user to send counter offer even if there's a pending admin counter offer
