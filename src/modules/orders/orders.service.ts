@@ -5,6 +5,7 @@ import AppError from '../../utils/AppError';
 import logger from '../../utils/logger';
 import { autoUpdateAccountLevel } from '../../utils/accountLevel';
 import { sendOrderAssignmentEmail, sendOrderCompletedEmail, sendOrderRevisionRequestedEmail, sendOrderCancelledEmail } from '../../utils/email';
+import mongoose from 'mongoose';
 
 /**
  * Orders Service
@@ -114,8 +115,22 @@ class OrdersService {
   }> {
     const skip = (page - 1) * limit;
 
-    const query = { publisherId, ...filters };
+    // Convert publisherId to ObjectId to ensure proper matching
+    let publisherObjectId: mongoose.Types.ObjectId;
+    try {
+      publisherObjectId = new mongoose.Types.ObjectId(publisherId);
+    } catch (error) {
+      logger.error(`Invalid publisherId format: ${publisherId}`, error);
+      throw new AppError('Invalid publisher ID format', 400);
+    }
 
+    const query = { 
+      publisherId: publisherObjectId, 
+      ...filters 
+    };
+
+    logger.info(`Fetching orders for publisher: ${publisherId} (ObjectId: ${publisherObjectId})`);
+    
     const orders = await Order.find(query)
       .populate('websiteId', 'url domainAuthority')
       .sort({ createdAt: -1 })
@@ -123,6 +138,8 @@ class OrdersService {
       .limit(limit);
 
     const total = await Order.countDocuments(query);
+
+    logger.info(`Found ${orders.length} orders out of ${total} total for publisher ${publisherId}`);
 
     return {
       orders,
