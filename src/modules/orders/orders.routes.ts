@@ -16,6 +16,7 @@ router.get('/stats', ordersController.getOrderStats);
 // Publisher routes
 router.get('/', ordersController.getPublisherOrders);
 router.get('/:id', ordersController.getOrderById);
+router.post('/:id/approve', ordersController.approveOrderTopic);
 router.post('/:id/submit', ordersController.submitPostUrl);
 
 export default router;

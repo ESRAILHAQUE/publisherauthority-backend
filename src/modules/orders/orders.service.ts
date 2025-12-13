@@ -49,7 +49,7 @@ class OrdersService {
       ...orderDataWithoutId,
       orderId: generatedOrderId,
       deadline,
-      status: 'ready-to-post' as const,
+      status: 'pending' as const, // Order starts as pending, user needs to approve topic
     };
     
     logger.info('Creating order with data:', {
@@ -69,13 +69,26 @@ class OrdersService {
 
     logger.info(`Order created: ${order.orderId} for publisher ${publisher.email}`);
     
-    // Send order assignment email
+    // Populate website for email
+    const populatedOrder = await Order.findById(order._id)
+      .populate('websiteId', 'url')
+      .populate('publisherId', 'firstName lastName email');
+    
+    // Send order assignment email with full details
     try {
+      const websiteUrl = populatedOrder && (populatedOrder.websiteId as any)?.url 
+        ? (populatedOrder.websiteId as any).url 
+        : '';
+      
       await sendOrderAssignmentEmail(
         publisher.email,
         `${publisher.firstName} ${publisher.lastName}`,
         order.title,
-        order.orderId
+        order.orderId,
+        websiteUrl,
+        order.targetUrl,
+        order.anchorText,
+        order.content
       );
     } catch (emailError: any) {
       logger.error('Failed to send order assignment email:', emailError);
@@ -117,6 +130,29 @@ class OrdersService {
       page,
       pages: Math.ceil(total / limit),
     };
+  }
+
+  /**
+   * Approve Order Topic (Publisher)
+   * Moves order from pending to ready-to-post
+   */
+  async approveOrderTopic(orderId: string, publisherId: string): Promise<IOrder> {
+    const order = await Order.findOne({ _id: orderId, publisherId });
+    
+    if (!order) {
+      throw new AppError('Order not found', 404);
+    }
+    
+    if (order.status !== 'pending') {
+      throw new AppError(`Order cannot be approved. Current status: ${order.status}`, 400);
+    }
+    
+    order.status = 'ready-to-post';
+    await order.save();
+    
+    logger.info(`Order ${order.orderId} topic approved by publisher ${publisherId}`);
+    
+    return order;
   }
 
   /**

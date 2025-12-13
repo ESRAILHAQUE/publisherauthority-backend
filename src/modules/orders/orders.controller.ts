@@ -65,6 +65,20 @@ class OrdersController {
   });
 
   /**
+   * @route   POST /api/v1/orders/:id/approve
+   * @desc    Approve order topic (moves from pending to ready-to-post)
+   * @access  Private (Publisher)
+   */
+  approveOrderTopic = asyncHandler(async (req: AuthRequest, res: Response, _next: NextFunction) => {
+    const publisherId = req.user!.id;
+    const { id } = req.params;
+
+    const order = await ordersService.approveOrderTopic(id, publisherId);
+
+    sendSuccess(res, 200, 'Order topic approved successfully. Order is now ready to post.', { order });
+  });
+
+  /**
    * @route   GET /api/v1/orders/stats
    * @desc    Get order statistics
    * @access  Private (Publisher)

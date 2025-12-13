@@ -171,25 +171,60 @@ export async function sendApplicationRejectionEmail(
 export async function sendOrderAssignmentEmail(
   userEmail: string,
   userName: string,
-  orderTitle: string,
-  orderId: string
+  _orderTitle: string,
+  orderId: string,
+  websiteUrl: string = '',
+  targetUrl: string = '',
+  anchorText: string = '',
+  content: string = ''
 ): Promise<void> {
+  // Extract order number from orderId (e.g., ORD-1234567890-123 -> 1234567890)
+  const orderNumber = orderId.split('-').length > 1 ? orderId.split('-')[1] : orderId;
+  
   const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #3F207F;">New Order Assigned</h2>
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+        <h2 style="color: #3F207F; margin-top: 0;">Publisher Authority - New Guest Post Order ${orderNumber}</h2>
+      </div>
+      
       <p>Hi ${userName},</p>
-      <p>A new order has been assigned to you:</p>
-      <p><strong>Order:</strong> ${orderTitle}</p>
-      <p><strong>Order ID:</strong> ${orderId}</p>
-      <p><a href="${config.FRONTEND_URL}/dashboard/orders/${orderId}" style="background-color: #3F207F; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Order</a></p>
-      <p>Please check your dashboard for more details.</p>
-      <p>Best regards,<br>The Publisher Authority Team</p>
+      <p>A new guest post order has been placed for your review. Here are the details:</p>
+      
+      <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+        <p style="margin: 8px 0;"><strong>Order ID:</strong> ${orderNumber}</p>
+        ${websiteUrl ? `<p style="margin: 8px 0;"><strong>Website:</strong> <a href="${websiteUrl}" style="color: #3F207F; text-decoration: none;">${websiteUrl}</a></p>` : ''}
+        ${targetUrl ? `<p style="margin: 8px 0;"><strong>Link:</strong> <a href="${targetUrl}" style="color: #3F207F; text-decoration: none;">${targetUrl}</a></p>` : ''}
+        ${anchorText ? `<p style="margin: 8px 0;"><strong>Anchor:</strong> ${anchorText}</p>` : ''}
+        ${content ? `<div style="margin: 15px 0;">
+          <p style="margin: 8px 0;"><strong>Topic:</strong></p>
+          <div style="background-color: #ffffff; padding: 12px; border-left: 3px solid #3F207F; margin-top: 8px;">
+            <p style="margin: 0; line-height: 1.6; color: #333;">${content}</p>
+          </div>
+        </div>` : ''}
+      </div>
+      
+      <p style="margin: 20px 0;">
+        <strong>Please, review and approve the order at:</strong><br>
+        <a href="${config.FRONTEND_URL}/dashboard/orders/${orderId}" style="background-color: #3F207F; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 10px; font-weight: bold;">
+          Review Order
+        </a>
+      </p>
+      
+      <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
+        <p style="color: #666; font-size: 14px; margin: 0;">
+          For further information on this specific order, please contact our support team.
+        </p>
+        <p style="color: #666; font-size: 14px; margin: 10px 0 0 0;">
+          Best regards,<br>
+          <strong>The Publisher Authority Team</strong>
+        </p>
+      </div>
     </div>
   `;
 
   await sendEmail({
     to: userEmail,
-    subject: `New Order: ${orderTitle}`,
+    subject: `Publisher Authority - New Guest Post Order ${orderNumber}`,
     html,
   });
 }
