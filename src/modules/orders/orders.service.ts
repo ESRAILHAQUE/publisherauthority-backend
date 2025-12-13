@@ -15,15 +15,37 @@ class OrdersService {
    * Create Order (Admin)
    */
   async createOrder(orderData: Partial<IOrder>): Promise<IOrder> {
+    // Validate publisherId
+    if (!orderData.publisherId) {
+      throw new AppError('Publisher ID is required', 400);
+    }
+
+    // Validate websiteId
+    if (!orderData.websiteId) {
+      throw new AppError('Website ID is required', 400);
+    }
+
+    logger.info('Creating order with publisherId:', orderData.publisherId, 'websiteId:', orderData.websiteId);
+
     // Verify publisher and website exist
     const publisher = await User.findById(orderData.publisherId);
     if (!publisher) {
+      logger.error(`Publisher not found with ID: ${orderData.publisherId}`);
       throw new AppError('Publisher not found', 404);
     }
 
     const website = await Website.findById(orderData.websiteId);
     if (!website || website.status !== 'active') {
+      logger.error(`Website not found or not active. ID: ${orderData.websiteId}, Status: ${website?.status || 'not found'}`);
       throw new AppError('Website not found or not active', 404);
+    }
+
+    // Verify website belongs to the publisher
+    const websiteUserId = website.userId?.toString();
+    const publisherIdStr = publisher._id.toString();
+    if (websiteUserId !== publisherIdStr) {
+      logger.error(`Website userId (${websiteUserId}) does not match publisherId (${publisherIdStr})`);
+      throw new AppError('Website does not belong to the specified publisher', 400);
     }
 
     // Remove orderId from orderData if present (it will be auto-generated)
@@ -57,7 +79,10 @@ class OrdersService {
       orderId: generatedOrderId,
       title: orderDataToCreate.title,
       websiteId: orderDataToCreate.websiteId,
+      websiteIdType: typeof orderDataToCreate.websiteId,
       publisherId: orderDataToCreate.publisherId,
+      publisherIdType: typeof orderDataToCreate.publisherId,
+      publisherIdString: String(orderDataToCreate.publisherId),
       anchorText: orderDataToCreate.anchorText,
       targetUrl: orderDataToCreate.targetUrl,
       deadline: deadline.toISOString(),
@@ -68,7 +93,17 @@ class OrdersService {
     
     const order = await Order.create(orderDataToCreate);
 
-    logger.info(`Order created: ${order.orderId} for publisher ${publisher.email}`);
+    // Verify the order was created with correct publisherId
+    const createdOrder = await Order.findById(order._id);
+    logger.info(`Order created successfully:`, {
+      orderId: order.orderId,
+      orderMongoId: order._id.toString(),
+      storedPublisherId: createdOrder?.publisherId?.toString(),
+      expectedPublisherId: publisher._id.toString(),
+      publisherEmail: publisher.email,
+      websiteId: order.websiteId.toString(),
+      status: order.status
+    });
     
     // Populate website for email
     const populatedOrder = await Order.findById(order._id)
