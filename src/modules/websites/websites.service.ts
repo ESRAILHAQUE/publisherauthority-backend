@@ -16,6 +16,24 @@ class WebsitesService {
    * Add Single Website
    */
   async addWebsite(userId: string, websiteData: Partial<IWebsite>): Promise<IWebsite> {
+    // Normalize URL to lowercase for duplicate checking
+    const normalizedUrl = websiteData.url?.toLowerCase().trim();
+    
+    if (!normalizedUrl) {
+      throw new AppError('Website URL is required', 400);
+    }
+
+    // Check if website with same URL already exists for this user
+    const existingWebsite = await Website.findOne({
+      userId,
+      url: normalizedUrl,
+      status: { $ne: 'deleted' } // Don't count deleted websites
+    });
+
+    if (existingWebsite) {
+      throw new AppError('This website has already been added. Each website can only be added once.', 400);
+    }
+
     // Generate verification code
     const verificationCode = crypto.randomBytes(32).toString('hex');
 
@@ -24,6 +42,7 @@ class WebsitesService {
 
     const website = await Website.create({
       ...dataWithoutCounterOffer,
+      url: normalizedUrl,
       userId,
       verificationCode,
       status: 'pending',
@@ -55,11 +74,37 @@ class WebsitesService {
    * Bulk Add Websites (from CSV)
    */
   async bulkAddWebsites(userId: string, websitesData: Partial<IWebsite>[]): Promise<IWebsite[]> {
+    // Normalize all URLs and check for duplicates
+    const normalizedUrls = websitesData.map(data => data.url?.toLowerCase().trim()).filter(Boolean);
+    
+    // Check for duplicates within the batch
+    const urlSet = new Set(normalizedUrls);
+    if (urlSet.size !== normalizedUrls.length) {
+      throw new AppError('Duplicate websites found in the CSV file. Each website can only be added once.', 400);
+    }
+
+    // Check for existing websites for this user
+    const existingWebsites = await Website.find({
+      userId,
+      url: { $in: normalizedUrls },
+      status: { $ne: 'deleted' }
+    }).select('url');
+
+    if (existingWebsites.length > 0) {
+      const existingUrls = existingWebsites.map(w => w.url).join(', ');
+      throw new AppError(
+        `Some websites have already been added: ${existingUrls}. Each website can only be added once.`,
+        400
+      );
+    }
+
     const websites = await Promise.all(
       websitesData.map(async (data) => {
+        const normalizedUrl = data.url?.toLowerCase().trim();
         const verificationCode = crypto.randomBytes(32).toString('hex');
         return Website.create({
           ...data,
+          url: normalizedUrl,
           userId,
           verificationCode,
           status: 'pending',
