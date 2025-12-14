@@ -258,6 +258,22 @@ class AdminController {
   );
 
   /**
+   * @route   GET /api/v1/admin/orders/:id
+   * @desc    Get order by ID
+   * @access  Private/Admin
+   */
+  getOrderById = asyncHandler(
+    async (req: AuthRequest, res: Response, _next: NextFunction) => {
+      const { id } = req.params;
+
+      // Admin can access any order without publisherId check
+      const order = await ordersService.getOrderById(id);
+
+      sendSuccess(res, 200, "Order retrieved successfully", { order });
+    }
+  );
+
+  /**
    * @route   PUT /api/v1/admin/orders/:id
    * @desc    Update order
    * @access  Private/Admin

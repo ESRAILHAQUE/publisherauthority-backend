@@ -32,6 +32,7 @@ router.put('/websites/:id/status', adminController.updateWebsiteStatus);
 
 // Orders Management
 router.get('/orders', adminController.getAllOrders);
+router.get('/orders/:id', adminController.getOrderById);
 router.post('/orders', adminController.createOrder);
 router.put('/orders/:id', adminController.updateOrder);
 router.put('/orders/:id/status', adminController.updateOrderStatus);
