@@ -140,6 +140,38 @@ export async function sendApplicationApprovalEmail(
 }
 
 /**
+ * Send Support Ticket Reply Email (Admin -> User)
+ */
+export async function sendSupportReplyEmail(
+  userEmail: string,
+  userName: string,
+  ticketNumber: string,
+  replyMessage: string
+): Promise<void> {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #0f172a;">
+      <h2 style="color: #3F207F; margin-bottom: 12px;">New Reply to Your Support Ticket</h2>
+      <p style="margin: 0 0 12px 0;">Hi ${userName || "there"},</p>
+      <p style="margin: 0 0 12px 0;">Our support team has replied to your ticket <strong>${ticketNumber}</strong>:</p>
+      <div style="border-left: 3px solid #3F207F; padding: 12px; background: #f8fafc; margin-bottom: 16px;">
+        <p style="margin: 0; white-space: pre-wrap;">${replyMessage}</p>
+      </div>
+      <p style="margin: 0 0 12px 0;">You can reply or view the full conversation in your dashboard.</p>
+      <p style="margin: 0 0 16px 0;">
+        <a href="${config.FRONTEND_URL || "https://publisherauthority.com"}/dashboard/support" style="background-color: #3F207F; color: #fff; padding: 10px 16px; text-decoration: none; border-radius: 6px;">Open Support</a>
+      </p>
+      <p style="margin: 0 0 12px 0;">Best regards,<br/>Publisher Authority Support</p>
+    </div>
+  `;
+
+  await sendEmail({
+    to: userEmail,
+    subject: `New reply on your ticket ${ticketNumber}`,
+    html,
+  });
+}
+
+/**
  * Send Application Rejection Email
  */
 export async function sendApplicationRejectionEmail(

@@ -2,6 +2,7 @@ import SupportTicket, { ISupportTicket } from './support.model';
 import User from '../auth/auth.model';
 import AppError from '../../utils/AppError';
 import logger from '../../utils/logger';
+import { sendSupportReplyEmail } from '../../utils/email';
 
 /**
  * Support Service
@@ -106,11 +107,13 @@ class SupportService {
     }
 
     // Check if user owns the ticket or is admin
+    let isAdmin = false;
     if (ticket.userId.toString() !== userId) {
       const user = await User.findById(userId);
       if (!user || user.role !== 'admin') {
         throw new AppError('You do not have permission to reply to this ticket', 403);
       }
+      isAdmin = true;
     }
 
     ticket.messages.push({
@@ -125,6 +128,19 @@ class SupportService {
     }
 
     await ticket.save();
+
+    // If an admin replied, notify the ticket owner by email
+    if (isAdmin) {
+      try {
+        const ticketOwner = await User.findById(ticket.userId).select('email firstName lastName');
+        if (ticketOwner?.email) {
+          const userName = `${ticketOwner.firstName || ''} ${ticketOwner.lastName || ''}`.trim();
+          await sendSupportReplyEmail(ticketOwner.email, userName, ticket.ticketNumber, message);
+        }
+      } catch (emailError: any) {
+        logger.error('Failed to send support reply email:', emailError);
+      }
+    }
 
     logger.info(`Message added to ticket: ${ticket.ticketNumber}`);
     return ticket;
