@@ -196,7 +196,7 @@ export async function sendOrderAssignmentEmail(
         ${targetUrl ? `<p style="margin: 8px 0;"><strong>Link:</strong> <a href="${targetUrl}" style="color: #3F207F; text-decoration: none;">${targetUrl}</a></p>` : ''}
         ${anchorText ? `<p style="margin: 8px 0;"><strong>Anchor:</strong> ${anchorText}</p>` : ''}
         ${content ? `<div style="margin: 15px 0;">
-          <p style="margin: 8px 0;"><strong>Topic:</strong></p>
+          <p style="margin: 8px 0;"><strong>Content:</strong></p>
           <div style="background-color: #ffffff; padding: 12px; border-left: 3px solid #3F207F; margin-top: 8px;">
             <p style="margin: 0; line-height: 1.6; color: #333;">${content}</p>
           </div>
