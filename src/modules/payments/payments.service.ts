@@ -106,7 +106,20 @@ class PaymentsService {
   async getPaymentStats(userId?: string) {
     const query = userId ? { userId } : {};
 
-    const [totalPayments, pendingPayments, paidPayments, totalAmount, pendingAmount] = await Promise.all([
+    const orderMatch: any = { status: 'completed' };
+    if (userId) {
+      orderMatch.publisherId = userId;
+    }
+
+    const [
+      totalPayments,
+      pendingPayments,
+      paidPayments,
+      totalAmount,
+      pendingAmount,
+      completedOrders,
+      completedEarnings,
+    ] = await Promise.all([
       Payment.countDocuments(query),
       Payment.countDocuments({ ...query, status: 'pending' }),
       Payment.countDocuments({ ...query, status: 'paid' }),
@@ -118,6 +131,11 @@ class PaymentsService {
         { $match: { ...query, status: 'pending' } },
         { $group: { _id: null, total: { $sum: '$amount' } } },
       ]),
+      Order.countDocuments(orderMatch),
+      Order.aggregate([
+        { $match: orderMatch },
+        { $group: { _id: null, total: { $sum: '$earnings' } } },
+      ]),
     ]);
 
     return {
@@ -126,6 +144,8 @@ class PaymentsService {
       paidPayments,
       totalAmount: totalAmount[0]?.total || 0,
       pendingAmount: pendingAmount[0]?.total || 0,
+      completedOrders,
+      completedEarnings: completedEarnings[0]?.total || 0,
     };
   }
 
