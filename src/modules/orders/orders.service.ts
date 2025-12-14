@@ -241,13 +241,19 @@ class OrdersService {
       throw new AppError('Order not found', 404);
     }
 
-    if (order.status !== 'ready-to-post') {
+    // Allow submission for both 'ready-to-post' and 'revision-requested' statuses
+    const isRevisionResubmission = order.status === 'revision-requested';
+    if (order.status !== 'ready-to-post' && !isRevisionResubmission) {
       throw new AppError('Order is not ready for submission', 400);
     }
 
     order.submittedUrl = submittedUrl;
     order.submittedAt = new Date();
     order.status = 'verifying';
+    // Clear revision notes when resubmitting after revision request
+    if (isRevisionResubmission) {
+      order.revisionNotes = undefined;
+    }
     await order.save();
 
     logger.info(`Post URL submitted for order: ${order.orderId}`);
