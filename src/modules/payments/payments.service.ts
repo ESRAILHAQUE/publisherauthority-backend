@@ -4,6 +4,7 @@ import User from '../auth/auth.model';
 import AppError from '../../utils/AppError';
 import logger from '../../utils/logger';
 import { sendPaymentNotificationEmail } from '../../utils/email';
+import mongoose from 'mongoose';
 
 /**
  * Payments Service
@@ -104,11 +105,12 @@ class PaymentsService {
    * Get Payment Statistics
    */
   async getPaymentStats(userId?: string) {
-    const query = userId ? { userId } : {};
+    const userObjectId = userId ? new mongoose.Types.ObjectId(userId) : undefined;
+    const query = userObjectId ? { userId: userObjectId } : {};
 
     const orderMatch: any = { status: 'completed' };
-    if (userId) {
-      orderMatch.publisherId = userId;
+    if (userObjectId) {
+      orderMatch.publisherId = userObjectId;
     }
 
     const [
