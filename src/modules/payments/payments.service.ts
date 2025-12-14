@@ -10,6 +10,15 @@ import mongoose from 'mongoose';
  * Payments Service
  */
 class PaymentsService {
+  private generateInvoiceNumber(): string {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const rand = Math.floor(Math.random() * 90000) + 10000; // 5-digit
+    return `INV-${year}${month}${day}-${rand}`;
+  }
+
   /**
    * Get User Payments
    */
@@ -264,6 +273,95 @@ class PaymentsService {
     } catch (emailError: any) {
       logger.error('Failed to send payment notification email:', emailError);
       // Don't fail payment if email fails
+    }
+
+    return payment;
+  }
+
+  /**
+   * Manually mark payment as paid with optional amount override
+   */
+  async manualPay(paymentId: string, amount?: number): Promise<IPayment> {
+    const payment = await Payment.findById(paymentId);
+
+    if (!payment) {
+      throw new AppError('Payment not found', 404);
+    }
+
+    if (typeof amount === 'number' && !isNaN(amount) && amount > 0) {
+      payment.amount = amount;
+    }
+
+    payment.status = 'paid';
+    payment.paymentDate = new Date();
+    await payment.save();
+
+    // Send payment notification email
+    try {
+      const user = await User.findById(payment.userId).select('firstName lastName email');
+      if (user) {
+        await sendPaymentNotificationEmail(
+          user.email,
+          `${user.firstName} ${user.lastName}`,
+          payment.amount,
+          payment.invoiceNumber
+        );
+      }
+    } catch (emailError: any) {
+      logger.error('Failed to send manual payment email:', emailError);
+    }
+
+    return payment;
+  }
+
+  /**
+   * Create and immediately mark a manual payment as paid (no prior invoice)
+   */
+  async manualPayCreate(
+    userId: string,
+    amount: number,
+    paymentMethod?: string,
+    paypalEmail?: string
+  ): Promise<IPayment> {
+    if (!userId) {
+      throw new AppError('User ID is required', 400);
+    }
+    if (!amount || amount <= 0) {
+      throw new AppError('Amount must be greater than 0', 400);
+    }
+
+    const user = await User.findById(userId).select('firstName lastName email paypalEmail paymentMethod');
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
+
+    const finalPaymentMethod = paymentMethod || user.paymentMethod || 'PayPal';
+    const finalPaypalEmail = paypalEmail || user.paypalEmail;
+
+    const payment = await Payment.create({
+      userId,
+      amount,
+      currency: 'USD',
+      paymentMethod: finalPaymentMethod,
+      paypalEmail: finalPaypalEmail,
+      invoiceNumber: this.generateInvoiceNumber(),
+      invoiceDate: new Date(),
+      dueDate: new Date(),
+      paymentDate: new Date(),
+      status: 'paid',
+      description: 'Transferred successfully',
+    });
+
+    // Send payment notification email
+    try {
+      await sendPaymentNotificationEmail(
+        user.email,
+        `${user.firstName} ${user.lastName}`,
+        payment.amount,
+        payment.invoiceNumber
+      );
+    } catch (emailError: any) {
+      logger.error('Failed to send manual payment create email:', emailError);
     }
 
     return payment;

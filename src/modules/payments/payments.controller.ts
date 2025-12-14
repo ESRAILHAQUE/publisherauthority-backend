@@ -85,6 +85,9 @@ class PaymentsController {
     const { id } = req.params;
 
     const payment = await paymentsService.getPaymentById(id, userId);
+    if (!payment) {
+      return res.status(404).json({ success: false, message: 'Payment not found' });
+    }
     const user = await (await import('../auth/auth.model')).default.findById(userId).select('firstName lastName email');
 
     if (!user) {
@@ -117,7 +120,7 @@ class PaymentsController {
     res.setHeader('Content-Disposition', `attachment; filename="invoice-${payment.invoiceNumber}.pdf"`);
     res.setHeader('Content-Length', pdfBuffer.length);
 
-    res.send(pdfBuffer);
+    return res.send(pdfBuffer);
   });
 }
 
