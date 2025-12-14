@@ -568,6 +568,23 @@ class AdminController {
   );
 
   /**
+   * @route   POST /api/v1/admin/support/tickets/:id/messages
+   * @desc    Add admin message to ticket
+   * @access  Private/Admin
+   */
+  addTicketMessage = asyncHandler(
+    async (req: AuthRequest, res: Response, _next: NextFunction) => {
+      const { id } = req.params;
+      const adminId = req.user!.id;
+      const { message } = req.body;
+
+      const ticket = await supportService.addMessage(id, adminId, message);
+
+      sendSuccess(res, 200, "Message added successfully", { ticket });
+    }
+  );
+
+  /**
    * @route   GET /api/v1/admin/blog/posts
    * @desc    Get all blog posts (including drafts)
    * @access  Private/Admin

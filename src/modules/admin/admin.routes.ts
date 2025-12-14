@@ -56,6 +56,7 @@ router.get('/support/tickets', adminController.getAllTickets);
 router.get('/support/tickets/:id', adminController.getTicketById);
 router.post('/support/tickets/:id/assign', adminController.assignTicket);
 router.put('/support/tickets/:id/status', adminController.updateTicketStatus);
+router.post('/support/tickets/:id/messages', adminController.addTicketMessage);
 
 // Blog Management
 router.get('/blog/posts', adminController.getAllBlogPosts);
