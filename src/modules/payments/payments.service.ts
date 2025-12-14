@@ -117,6 +117,7 @@ class PaymentsService {
       paidPayments,
       totalAmount,
       pendingAmount,
+      paidAmount,
       completedOrders,
       completedEarnings,
     ] = await Promise.all([
@@ -129,6 +130,10 @@ class PaymentsService {
       ]),
       Payment.aggregate([
         { $match: { ...query, status: 'pending' } },
+        { $group: { _id: null, total: { $sum: '$amount' } } },
+      ]),
+      Payment.aggregate([
+        { $match: { ...query, status: 'paid' } },
         { $group: { _id: null, total: { $sum: '$amount' } } },
       ]),
       Order.countDocuments(orderMatch),
@@ -144,8 +149,13 @@ class PaymentsService {
       paidPayments,
       totalAmount: totalAmount[0]?.total || 0,
       pendingAmount: pendingAmount[0]?.total || 0,
+      paidAmount: paidAmount[0]?.total || 0,
       completedOrders,
       completedEarnings: completedEarnings[0]?.total || 0,
+      awaitingPayout: Math.max(
+        (completedEarnings[0]?.total || 0) - (paidAmount[0]?.total || 0),
+        0
+      ),
     };
   }
 
