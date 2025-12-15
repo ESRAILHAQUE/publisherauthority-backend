@@ -141,6 +141,21 @@ class AdminController {
   );
 
   /**
+   * @route   GET /api/v1/admin/websites/:id
+   * @desc    Get single website details (admin)
+   * @access  Private/Admin
+   */
+  getWebsiteById = asyncHandler(
+    async (req: AuthRequest, res: Response, _next: NextFunction) => {
+      const { id } = req.params;
+
+      const website = await adminService.getWebsiteById(id);
+
+      sendSuccess(res, 200, "Website retrieved successfully", { website });
+    }
+  );
+
+  /**
    * @route   PUT /api/v1/admin/websites/:id/verify
    * @desc    Verify website
    * @access  Private/Admin
@@ -566,6 +581,38 @@ class AdminController {
       sendSuccess(res, 200, "Ticket status updated successfully", { ticket });
     }
   );
+
+  /**
+   * @route   POST /api/v1/admin/payments/:id/manual-pay
+   * @desc    Manually mark payment as paid (with optional amount override)
+   * @access  Private/Admin
+   */
+  manualPay = asyncHandler(async (req: AuthRequest, res: Response, _next: NextFunction) => {
+    const { id } = req.params;
+    const { amount } = req.body;
+
+    const payment = await paymentsService.manualPay(id, amount);
+
+    sendSuccess(res, 200, "Payment marked as paid", { payment });
+  });
+
+  /**
+   * @route   POST /api/v1/admin/payments/manual/create-and-pay
+   * @desc    Create a manual payment for a user and mark as paid immediately
+   * @access  Private/Admin
+   */
+  manualPayCreate = asyncHandler(async (req: AuthRequest, res: Response, _next: NextFunction) => {
+    const { userId, amount, paymentMethod, paypalEmail } = req.body;
+
+    const payment = await paymentsService.manualPayCreate(
+      userId,
+      amount,
+      paymentMethod,
+      paypalEmail
+    );
+
+    sendSuccess(res, 200, "Manual payment created and marked as paid", { payment });
+  });
 
   /**
    * @route   POST /api/v1/admin/support/tickets/:id/messages

@@ -25,6 +25,7 @@ router.put('/publishers/:id/status', adminController.updatePublisherStatus);
 
 // Websites Management
 router.get('/websites', adminController.getAllWebsites);
+router.get('/websites/:id', adminController.getWebsiteById);
 router.put('/websites/:id/verify', adminController.verifyWebsite);
 router.post('/websites/:id/counter-offer', adminController.sendCounterOffer);
 router.post('/websites/:id/counter-offer/accept', adminController.acceptUserCounterOffer);
@@ -44,6 +45,8 @@ router.get('/payments/user/:userId/stats', adminController.getUserPaymentStats);
 router.post('/payments/generate', adminController.generateInvoice);
 router.put('/payments/:id/process', adminController.processPayment);
 router.put('/payments/:id/mark-paid', adminController.markPaymentAsPaid);
+router.post('/payments/:id/manual-pay', adminController.manualPay);
+router.post('/payments/manual/create-and-pay', adminController.manualPayCreate);
 
 // Applications Management
 router.get('/applications', adminController.getAllApplications);

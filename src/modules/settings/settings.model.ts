@@ -9,6 +9,8 @@ export interface ISettings extends Document {
   supportEmail: string;
   paymentSchedule: string;
   minimumPayout: number;
+  verificationAnchorText?: string;
+  verificationLink?: string;
   updatedAt: Date;
 }
 
@@ -36,6 +38,14 @@ const settingsSchema = new Schema<ISettings>(
     minimumPayout: {
       type: Number,
       default: 50,
+    },
+    verificationAnchorText: {
+      type: String,
+      default: 'Publisher Authority',
+    },
+    verificationLink: {
+      type: String,
+      default: 'https://publisherauthority.com',
     },
   },
   {

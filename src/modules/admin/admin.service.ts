@@ -80,6 +80,21 @@ class AdminService {
   }
 
   /**
+   * Get single website with user info (admin)
+   */
+  async getWebsiteById(websiteId: string) {
+    const website = await Website.findById(websiteId)
+      .populate('userId', 'firstName lastName email accountLevel accountStatus')
+      .lean();
+
+    if (!website) {
+      throw new AppError('Website not found', 404);
+    }
+
+    return website;
+  }
+
+  /**
    * Get All Publishers
    */
   async getAllPublishers(

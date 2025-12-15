@@ -9,6 +9,7 @@ import blogRoutes from './blog/blog.routes';
 import supportRoutes from './support/support.routes';
 import dashboardRoutes from './dashboard/dashboard.routes';
 import adminRoutes from './admin/admin.routes';
+import publicSettingsRoutes from './settings/public.routes';
 
 /**
  * Module Router
@@ -20,6 +21,7 @@ const router = Router();
 router.use('/auth', authRoutes);
 router.use('/applications', applicationsRoutes);
 router.use('/blog', blogRoutes);
+router.use('/settings', publicSettingsRoutes);
 
 // Protected routes (Publisher)
 router.use('/dashboard', dashboardRoutes);
