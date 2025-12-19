@@ -6,7 +6,6 @@ import Application from '../applications/applications.model';
 import SupportTicket from '../support/support.model';
 import AppError from '../../utils/AppError';
 import logger from '../../utils/logger';
-import crypto from 'crypto';
 
 /**
  * Admin Service
@@ -153,6 +152,7 @@ class AdminService {
     lastName: string;
     email: string;
     country: string;
+    password: string;
     paypalEmail?: string;
   }) {
     const existing = await User.findOne({ email: data.email.toLowerCase().trim() });
@@ -160,14 +160,15 @@ class AdminService {
       throw new AppError('A user with this email already exists', 400);
     }
 
-    // Generate a strong random password to share with the user
-    const password = crypto.randomBytes(6).toString('base64').slice(0, 10);
+    if (!data.password || data.password.length < 6) {
+      throw new AppError('Password must be at least 6 characters', 400);
+    }
 
     const user = await User.create({
       firstName: data.firstName,
       lastName: data.lastName,
       email: data.email.toLowerCase().trim(),
-      password,
+      password: data.password,
       country: data.country,
       role: 'publisher',
       accountStatus: 'active',
@@ -180,7 +181,7 @@ class AdminService {
 
     return {
       user,
-      generatedPassword: password,
+      password: data.password,
     };
   }
 
