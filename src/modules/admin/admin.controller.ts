@@ -9,6 +9,7 @@ import supportService from "../support/support.service";
 import blogService from "../blog/blog.service";
 import asyncHandler from "../../utils/asyncHandler";
 import { sendSuccess } from "../../utils/apiResponse";
+import AppError from "../../utils/AppError";
 
 /**
  * Admin Controller
@@ -40,7 +41,7 @@ class AdminController {
    */
   getAllPublishers = asyncHandler(
     async (req: AuthRequest, res: Response, _next: NextFunction) => {
-      const { accountLevel, accountStatus, page = 1, limit = 20 } = req.query;
+      const { accountLevel, accountStatus, page = 1, limit = 25 } = req.query;
 
       const filters: any = {};
       if (accountLevel) filters.accountLevel = accountLevel;
@@ -53,6 +54,31 @@ class AdminController {
       );
 
       sendSuccess(res, 200, "Publishers retrieved successfully", result);
+    }
+  );
+
+  /**
+   * @route   POST /api/v1/admin/publishers
+   * @desc    Create publisher manually (without application)
+   * @access  Private/Admin
+   */
+  createPublisher = asyncHandler(
+    async (req: AuthRequest, res: Response, _next: NextFunction) => {
+      const { firstName, lastName, email, country, paypalEmail } = req.body;
+
+      if (!firstName || !lastName || !email || !country) {
+        throw new AppError("firstName, lastName, email, and country are required", 400);
+      }
+
+      const result = await adminService.createPublisher({
+        firstName,
+        lastName,
+        email,
+        country,
+        paypalEmail,
+      });
+
+      sendSuccess(res, 201, "Publisher created successfully", result);
     }
   );
 
@@ -125,10 +151,22 @@ class AdminController {
    */
   getAllWebsites = asyncHandler(
     async (req: AuthRequest, res: Response, _next: NextFunction) => {
-      const { status, page = 1, limit = 20 } = req.query;
+      const { status, page = 1, limit = 25, minDa, maxDa, minTraffic, maxTraffic, minPrice, maxPrice, niche, verified, search } = req.query;
 
       const filters: any = {};
-      if (status) filters.status = status;
+      if (status) {
+        // Normalize "approved" to active for backward compatibility
+        filters.status = status === "approved" ? "active" : status;
+      }
+      if (search) filters.search = search;
+      if (minDa) filters.minDa = Number(minDa);
+      if (maxDa) filters.maxDa = Number(maxDa);
+      if (minTraffic) filters.minTraffic = Number(minTraffic);
+      if (maxTraffic) filters.maxTraffic = Number(maxTraffic);
+      if (minPrice) filters.minPrice = Number(minPrice);
+      if (maxPrice) filters.maxPrice = Number(maxPrice);
+      if (niche) filters.niche = niche;
+      if (verified !== undefined) filters.verified = verified;
 
       const result = await websitesService.getAllWebsites(
         filters,

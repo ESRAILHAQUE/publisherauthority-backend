@@ -20,6 +20,7 @@ router.get('/activity', adminController.getRecentActivity);
 // Publishers Management
 router.get('/publishers', adminController.getAllPublishers);
 router.get('/publishers/:id', adminController.getPublisherDetails);
+router.post('/publishers', adminController.createPublisher);
 router.put('/publishers/:id/level', adminController.updatePublisherLevel);
 router.put('/publishers/:id/status', adminController.updatePublisherStatus);
 

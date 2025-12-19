@@ -86,7 +86,7 @@ class PaymentsService {
     }
 
     // Validate payment method if provided
-    const validPaymentMethods = ['PayPal', 'Bank Transfer', 'Wise', 'Payoneer', 'Other'];
+    const validPaymentMethods = ['PayPal'];
     if (paymentMethod && !validPaymentMethods.includes(paymentMethod)) {
       throw new AppError('Invalid payment method', 400);
     }

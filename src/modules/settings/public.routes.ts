@@ -12,3 +12,4 @@ router.get('/public', settingsController.getPublicVerificationSettings);
 
 export default router;
 
+

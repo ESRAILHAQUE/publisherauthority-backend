@@ -6,6 +6,7 @@ import Application from '../applications/applications.model';
 import SupportTicket from '../support/support.model';
 import AppError from '../../utils/AppError';
 import logger from '../../utils/logger';
+import crypto from 'crypto';
 
 /**
  * Admin Service
@@ -100,7 +101,7 @@ class AdminService {
   async getAllPublishers(
     filters: any = {},
     page = 1,
-    limit = 20
+    limit = 25
   ): Promise<{
     publishers: any[];
     total: number;
@@ -141,6 +142,45 @@ class AdminService {
       total,
       page,
       pages: Math.ceil(total / limit),
+    };
+  }
+
+  /**
+   * Create Publisher (Admin manual creation without application)
+   */
+  async createPublisher(data: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    country: string;
+    paypalEmail?: string;
+  }) {
+    const existing = await User.findOne({ email: data.email.toLowerCase().trim() });
+    if (existing) {
+      throw new AppError('A user with this email already exists', 400);
+    }
+
+    // Generate a strong random password to share with the user
+    const password = crypto.randomBytes(6).toString('base64').slice(0, 10);
+
+    const user = await User.create({
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email.toLowerCase().trim(),
+      password,
+      country: data.country,
+      role: 'publisher',
+      accountStatus: 'active',
+      applicationStatus: 'approved',
+      isVerified: true,
+      isActive: true,
+      paymentMethod: 'PayPal',
+      paypalEmail: data.paypalEmail?.trim() || data.email.toLowerCase().trim(),
+    });
+
+    return {
+      user,
+      generatedPassword: password,
     };
   }
 

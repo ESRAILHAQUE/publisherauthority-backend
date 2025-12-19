@@ -112,7 +112,7 @@ const userSchema = new Schema<IUser>(
     },
     paymentMethod: {
       type: String,
-      enum: ['PayPal', 'Bank Transfer', 'Wise', 'Payoneer', 'Other'],
+      enum: ['PayPal'],
       default: 'PayPal',
       trim: true,
     },

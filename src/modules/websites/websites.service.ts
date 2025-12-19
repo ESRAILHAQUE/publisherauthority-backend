@@ -234,6 +234,14 @@ class WebsitesService {
       throw new AppError('Website is already verified', 400);
     }
 
+    // If previously rejected, move back to pending to allow resubmission
+    if (website.status === 'rejected') {
+      website.status = 'pending';
+      website.rejectedReason = undefined;
+      website.verifiedAt = undefined;
+      website.approvedAt = undefined;
+    }
+
     website.verificationMethod = method;
     if (method === 'article' && articleUrl) {
       website.verificationArticleUrl = articleUrl;
@@ -602,27 +610,113 @@ class WebsitesService {
   /**
    * Get All Websites (Admin)
    */
-  async getAllWebsites(filters: any = {}, page = 1, limit = 20): Promise<{
+  async getAllWebsites(filters: any = {}, page = 1, limit = 25): Promise<{
     websites: IWebsite[];
     total: number;
     page: number;
     pages: number;
+    counts: {
+      pending: number;
+      active: number;
+      rejected: number;
+      counterOffer: number;
+    };
   }> {
     const skip = (page - 1) * limit;
 
-    const websites = await Website.find(filters)
+    // Build advanced filters
+    const query: any = { ...filters };
+
+    // Search by URL or niche (case-insensitive)
+    if (filters.search) {
+      const regex = new RegExp(String(filters.search), 'i');
+      query.$or = [
+        { url: { $regex: regex } },
+        { niche: { $regex: regex } },
+      ];
+    }
+
+    // DA range
+    if (filters.minDa || filters.maxDa) {
+      query.domainAuthority = {};
+      if (filters.minDa) query.domainAuthority.$gte = Number(filters.minDa);
+      if (filters.maxDa) query.domainAuthority.$lte = Number(filters.maxDa);
+    }
+
+    // Traffic range (monthlyTraffic or traffic)
+    if (filters.minTraffic || filters.maxTraffic) {
+      query.$or = [
+        {
+          monthlyTraffic: {
+            ...(filters.minTraffic ? { $gte: Number(filters.minTraffic) } : {}),
+            ...(filters.maxTraffic ? { $lte: Number(filters.maxTraffic) } : {}),
+          },
+        },
+        {
+          traffic: {
+            ...(filters.minTraffic ? { $gte: Number(filters.minTraffic) } : {}),
+            ...(filters.maxTraffic ? { $lte: Number(filters.maxTraffic) } : {}),
+          },
+        },
+      ];
+    }
+
+    // Price range
+    if (filters.minPrice || filters.maxPrice) {
+      query.price = {};
+      if (filters.minPrice) query.price.$gte = Number(filters.minPrice);
+      if (filters.maxPrice) query.price.$lte = Number(filters.maxPrice);
+    }
+
+    // Niche filter (case-insensitive)
+    if (filters.niche) {
+      query.niche = { $regex: new RegExp(String(filters.niche), 'i') };
+    }
+
+    // Verified filter: if verified=true, status must be active; if false, not active
+    if (filters.verified !== undefined) {
+      if (String(filters.verified) === 'true') {
+        query.status = 'active';
+      } else if (String(filters.verified) === 'false') {
+        query.status = { $ne: 'active' };
+      }
+    }
+
+    const websites = await Website.find(query)
       .populate('userId', 'firstName lastName email accountLevel')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
 
-    const total = await Website.countDocuments(filters);
+    const total = await Website.countDocuments(query);
+
+    // Status counts (global, not paginated)
+    const statusCountsAgg = await Website.aggregate([
+      { $match: query },
+      { $group: { _id: '$status', count: { $sum: 1 } } },
+    ]);
+
+    const counts = {
+      pending: 0,
+      active: 0,
+      rejected: 0,
+      counterOffer: 0,
+    };
+
+    statusCountsAgg.forEach((row) => {
+      const key = String(row._id || '').toLowerCase();
+      if (key === 'pending') counts.pending = row.count;
+      if (key === 'active') counts.active = row.count;
+      if (key === 'rejected') counts.rejected = row.count;
+      if (key === 'counter-offer') counts.counterOffer = row.count;
+    });
 
     return {
       websites,
       total,
       page,
       pages: Math.ceil(total / limit),
+      counts,
     };
   }
 
@@ -640,13 +734,13 @@ class WebsitesService {
       throw new AppError('Website not found', 404);
     }
 
+    const wasActive = website.status === 'active';
+
     website.status = status as any;
     
     if (status === 'rejected' && rejectionReason) {
       website.rejectedReason = rejectionReason;
     }
-
-    const wasActive = website.status === 'active';
     
     if (status === 'active') {
       website.approvedAt = new Date();
@@ -674,6 +768,8 @@ class WebsitesService {
         }
       }
     } else if (status === 'rejected') {
+      website.verifiedAt = undefined;
+      website.approvedAt = undefined;
       // Send website rejection email
       try {
         const user = await User.findById(website.userId).select('firstName lastName email');
