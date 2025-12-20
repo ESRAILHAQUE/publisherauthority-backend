@@ -624,63 +624,79 @@ class WebsitesService {
   }> {
     const skip = (page - 1) * limit;
 
-    // Build advanced filters
-    const query: any = { ...filters };
+    // Build filters explicitly to avoid leaking helper keys (search, minDa, etc.) into the Mongo query
+    const andClauses: any[] = [];
+
+    // Status filter (normalized by controller already, but keep explicit)
+    if (filters.status) {
+      andClauses.push({ status: filters.status });
+    }
+
+    // Verified filter: true => active only, false => anything not active
+    if (filters.verified !== undefined) {
+      const verifiedClause =
+        String(filters.verified) === 'true'
+          ? { status: 'active' }
+          : { status: { $ne: 'active' } };
+      andClauses.push(verifiedClause);
+    }
 
     // Search by URL or niche (case-insensitive)
     if (filters.search) {
       const regex = new RegExp(String(filters.search), 'i');
-      query.$or = [
-        { url: { $regex: regex } },
-        { niche: { $regex: regex } },
-      ];
+      andClauses.push({
+        $or: [{ url: { $regex: regex } }, { niche: { $regex: regex } }],
+      });
     }
 
     // DA range
-    if (filters.minDa || filters.maxDa) {
-      query.domainAuthority = {};
-      if (filters.minDa) query.domainAuthority.$gte = Number(filters.minDa);
-      if (filters.maxDa) query.domainAuthority.$lte = Number(filters.maxDa);
+    if (filters.minDa !== undefined || filters.maxDa !== undefined) {
+      const daClause: any = {};
+      if (filters.minDa !== undefined) daClause.$gte = Number(filters.minDa);
+      if (filters.maxDa !== undefined) daClause.$lte = Number(filters.maxDa);
+      andClauses.push({ domainAuthority: daClause });
     }
 
     // Traffic range (monthlyTraffic or traffic)
-    if (filters.minTraffic || filters.maxTraffic) {
-      query.$or = [
-        {
-          monthlyTraffic: {
-            ...(filters.minTraffic ? { $gte: Number(filters.minTraffic) } : {}),
-            ...(filters.maxTraffic ? { $lte: Number(filters.maxTraffic) } : {}),
-          },
-        },
-        {
-          traffic: {
-            ...(filters.minTraffic ? { $gte: Number(filters.minTraffic) } : {}),
-            ...(filters.maxTraffic ? { $lte: Number(filters.maxTraffic) } : {}),
-          },
-        },
-      ];
+    if (filters.minTraffic !== undefined || filters.maxTraffic !== undefined) {
+      const trafficRange: any = {
+        ...(filters.minTraffic !== undefined
+          ? { $gte: Number(filters.minTraffic) }
+          : {}),
+        ...(filters.maxTraffic !== undefined
+          ? { $lte: Number(filters.maxTraffic) }
+          : {}),
+      };
+
+      andClauses.push({
+        $or: [
+          { monthlyTraffic: trafficRange },
+          { traffic: trafficRange },
+        ],
+      });
     }
 
     // Price range
-    if (filters.minPrice || filters.maxPrice) {
-      query.price = {};
-      if (filters.minPrice) query.price.$gte = Number(filters.minPrice);
-      if (filters.maxPrice) query.price.$lte = Number(filters.maxPrice);
+    if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
+      const priceClause: any = {};
+      if (filters.minPrice !== undefined)
+        priceClause.$gte = Number(filters.minPrice);
+      if (filters.maxPrice !== undefined)
+        priceClause.$lte = Number(filters.maxPrice);
+      andClauses.push({ price: priceClause });
     }
 
     // Niche filter (case-insensitive)
     if (filters.niche) {
-      query.niche = { $regex: new RegExp(String(filters.niche), 'i') };
+      andClauses.push({
+        niche: { $regex: new RegExp(String(filters.niche), 'i') },
+      });
     }
 
-    // Verified filter: if verified=true, status must be active; if false, not active
-    if (filters.verified !== undefined) {
-      if (String(filters.verified) === 'true') {
-        query.status = 'active';
-      } else if (String(filters.verified) === 'false') {
-        query.status = { $ne: 'active' };
-      }
-    }
+    const query =
+      andClauses.length > 0
+        ? { $and: andClauses }
+        : {};
 
     const websites = await Website.find(query)
       .populate('userId', 'firstName lastName email accountLevel')
