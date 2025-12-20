@@ -64,10 +64,25 @@ class AdminController {
    */
   createPublisher = asyncHandler(
     async (req: AuthRequest, res: Response, _next: NextFunction) => {
-      const { firstName, lastName, email, country, paypalEmail } = req.body;
+      const {
+        firstName,
+        lastName,
+        email,
+        country,
+        paypalEmail,
+        password,
+      } = req.body;
 
-      if (!firstName || !lastName || !email || !country) {
-        throw new AppError("firstName, lastName, email, and country are required", 400);
+      const trimmedPassword = String(password || "").trim();
+
+      if (!firstName || !lastName || !email || !country || !password) {
+        throw new AppError(
+          "firstName, lastName, email, country, and password are required",
+          400
+        );
+      }
+      if (trimmedPassword.length < 6) {
+        throw new AppError("Password must be at least 6 characters", 400);
       }
 
       const result = await adminService.createPublisher({
@@ -76,6 +91,7 @@ class AdminController {
         email,
         country,
         paypalEmail,
+        password: trimmedPassword,
       });
 
       sendSuccess(res, 201, "Publisher created successfully", result);
