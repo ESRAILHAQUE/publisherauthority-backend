@@ -171,8 +171,16 @@ class AdminController {
 
       const filters: any = {};
       if (status) {
-        // Normalize "approved" to active for backward compatibility
-        filters.status = status === "approved" ? "active" : status;
+        // Support comma-separated statuses; normalize "approved" -> "active"
+        const statusList = String(status)
+          .split(",")
+          .map((s) => (s === "approved" ? "active" : s))
+          .filter(Boolean);
+        if (statusList.length > 1) {
+          filters.status = { $in: statusList };
+        } else if (statusList.length === 1) {
+          filters.status = statusList[0];
+        }
       }
       if (search) filters.search = search;
       if (minDa) filters.minDa = Number(minDa);
